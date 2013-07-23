@@ -1,8 +1,91 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    font: 14px sans-serif;
+    margin:0;
+    padding:0;
 }
 
-a {
-  color: #00B7FF;
+.notShown {
+    display:none;
+}
+
+#sidebar {
+    position:fixed;
+    left:0px;
+    top:0px;
+    width:23%;
+    height:100%;
+    margin:1%;
+}
+
+#turnCounter p {
+    float:left;
+}
+
+#turnCounter button {
+    float:right;
+}
+
+#sidebar ul {
+    list-style:none;
+    padding:0;
+}
+
+#sidebar li {
+    width:100%;
+    border: 1px solid #025920;
+    border-bottom: none;
+    overflow:hidden;
+    word-break: break-all;
+    height: 35px;
+}
+
+#sidebar li:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+#sidebar li:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom: 1px solid #025920;
+}
+
+#sidebar li button {
+    width:100%;
+    margin:0;
+    padding:0;
+    background: transparent;
+    border-style: none;
+}
+
+#content {
+    position:fixed;
+    left:25%;
+    top:0px;
+    width:73%;
+    height:100%;
+    margin:1%;
+}
+
+.gameimage {
+    max-width:100%;
+}
+
+.horizontalList {
+    height:90px;
+    overflow-x:scroll;
+}
+
+#resourcesProgress {
+    width:200px;
+    border-radius: 8px; /* (height of inner div) / 2 + padding */
+    padding: 3px;
+    background-color:blue;
+}
+
+#resourcesProgress div {
+    background-color:green;
+    width:100%;
+    height: 10px;
+    border-radius: 5px;
 }

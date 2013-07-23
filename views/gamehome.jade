@@ -1,23 +1,13 @@
 extends layout
 
 block content
-  - var turnOnMenu = game && game.memeplexes[0];
-  script.
-    var leadersA = new Array(), numSelfFunded = 0;
-    var corpsA = new Array();
-    var localesA = new Array();
-  mixin settingsPageMixin
-    a(href='/') Logout
-    newGameURL = '/user/' + accountId + '/game/new'
-    a(href=newGameURL) New Game
-    .multilist
-      ul.listgroup
+  - var turnOnMenu = game && game.families[0];
 
   #sidebar
     if turnOnMenu
-      img.memeimage(src="/images/#{game.memeplexes[0].name}memeimage.jpg")
+      img.gameimage(src="/images/#{game.families[0].name}image.jpg")
     else
-      img.memeimage(src="/images/memewarsmemeimage.jpg")
+      img.gameimage(src="/images/pendragonimage.jpg")
     if turnOnMenu
       #turnCounter
         p #{game.turn.quarter} #{game.turn.year}
@@ -27,14 +17,14 @@ block content
           button#expendituresMenu
             p Expenditures
         li
-          button#distributionMenu
-            p Distributions
+          button#charactersMenu
+            p Characters
         li
-          button#investmentMenu
-            p Investments
+          button#mapMenu
+            p Map
         li
-          button#memeplexesMenu
-            p Memeplexes
+          button#courtMenu
+            p Court
         li
           button#historyMenu
             p History
@@ -46,98 +36,30 @@ block content
   form#content( action=formUrl, method="POST")
     if turnOnMenu
       #resources
-        p Resources #{game.memeplexes[0].monetaryUnit} #{turnResources}
+        p Resources #{turnResources}£
         #resourcesProgress
           div
-        p#remainingResources #{game.memeplexes[0].monetaryUnit} #{turnResources}
+        p#remainingResources #{turnResources}£
       fieldset#expendituresPage
-        #propaganda
-          label(for="propaganda") Propaganda
-          input(type="range", name="propaganda", max="#{turnResources}", value=game.memeplexes[0].propaganda)
-        #investment
-          label(for="investment") #{game.memeplexes[0].investmentName}
-          input(type="range", name="investment", max="#{turnResources}", value=game.memeplexes[0].investment)
-        #leaders.horizontalList
-          each leader in game.memeplexes[0].leaders
-            script.
-              leadersA.push( {name:"#{leader.name}",
-                              selffunding:#{leader.selffunding},
-                              funded:#{leader.funded},
-                              profession:{name:"#{leader.profession.name}",level:#{leader.profession.level}},
-                              charisma:#{leader.charisma},
-                              community:#{leader.community},
-                              management:#{leader.management},
-                              race:"#{leader.race}"
-                             });
-            if leader.selffunding
-              script.
-                numSelfFunded++;
-            .leaderFunding
-              if leader.funded
-                button.leaderDetailButton(class='fundedLeader')
-                  p #{leader.name}
-                  input(type="checkbox", name=leader.name, checked='true')
-              else
-                button.leaderDetailButton
-                  p #{leader.name}
-                  input(type="checkbox", name=leader.name)
-      fieldset#distributionPage(class='notShown')
-        #corporations
-          p#corpTotal Corporations #{corpIncome} #{game.memeplexes[0].monetaryUnit}
-          .horizontalList
-            each corp in game.memeplexes[0].corps
-              script.
-                corpsA.push( {name:"#{corp.name}",
-                              donation:#{corp.donation},
-                              funding:#{corp.funding},
-                              influence:#{corp.influence}
-                             });
-              button.corpDetailButton
-                label(for=corp.name) #{corp.name}
-                p #{corp.donation} #{game.memeplexes[0].monetaryUnit}
-                input(type="range", name=corp.name, value=corp.funding)
-        #locales
-          p#localeTotal Locales #{localeIncome} #{game.memeplexes[0].monetaryUnit}
-          .horizontalList
-            each locale,i in game.memeplexes[0].locales
-              script.
-                localesA.push( {name:"#{locale.name}",
-                                biotech:#{locale.biotech},
-                                nanotech:#{locale.nanotech},
-                                aitech:#{locale.aitech},
-                                funding:#{locale.funding},
-                                });
-              button.localeDetailButton
-                label(for=locale.name) #{locale.name}
-                br
-                input(type="range", name=locale.name, value=locale.funding)
-      fieldset#investmentPage(class='notShown')
-        #investmentAreas
-          p#investmentTotal #{game.memeplexes[0].investmentName} #{game.memeplexes[0].investment} #{game.memeplexes[0].monetaryUnit}
-          each investment in game.memeplexes[0].investments
-            button.investmentDetailButton
-              label(for=investment.name) #{investment.name}
-              br
-              input(type="range", name=investment.name, value=investment.funding)
-        #propagandaAreas
-          p#propagandaTotal Propaganda #{game.memeplexes[0].propaganda} #{game.memeplexes[0].monetaryUnit}
-          each item in game.memeplexes[0].props
-            button.propagandaDetailButton
-              label(for=item.name) #{item.name}
-              br
-              input(type="range", name=item.name, value=item.funding)
-      fieldset#memeplexesPage(class='notShown')
-        each memeplex in game.memeplexes
-          .memeplexItem
-            button.memeplexDetailButton
-              p #{memeplex.name}
+        #locales.horizontalList
+          each locale in game.families[0].locales
+            button.localeDetailButton
+              label(for=locale.name) #{locale.name}
+              input(type="range", name=locale.name, value=locale.taxation)
+      fieldset#charactersPage(class='notShown')
+        #characters.horizontalList
+          each member in game.families[0].members
+            button.memberDetailButton
+              p #{member.name}
+      fieldset#mapPage(class='notShown')
+      fieldset#courtPage(class='notShown')
       fieldset#historyPage(class='notShown')
-    if turnOnMenu
-      fieldset#settingsPage(class='notShown')
-        mixin settingsPageMixin
-    else
-      fieldset#settingsPage
-        mixin settingsPageMixin
+    fieldset#settingsPage(class='notShown')
+      a(href='/') Logout
+      newGameURL = '/user/' + accountId + '/game/new'
+      a(href=newGameURL) New Game
+      .multilist
+        ul.listgroup
 
   if turnOnMenu
     script.
@@ -152,9 +74,9 @@ block content
             }
         };
         $('#expendituresMenu').click( function() {showPage('#expendituresPage');});
-        $('#distributionMenu').click( function() {showPage('#distributionPage');});
-        $('#investmentMenu').click( function() {showPage('#investmentPage');});
-        $('#memeplexesMenu').click( function() {showPage('#memeplexesPage');});
+        $('#charactersMenu').click( function() {showPage('#charactersPage');});
+        $('#mapMenu').click( function() {showPage('#mapPage');});
+        $('#courtMenu').click( function() {showPage('#courtPage');});
         $('#historyMenu').click( function() {showPage('#historyPage');});
         $('#settingsMenu').click( function() {showPage('#settingsPage');});
         $('#turnCounter button').click(function() {
@@ -162,104 +84,30 @@ block content
         });
 
         //expendituresPage
-        var progWidth = #{turnResources} + leadersA.length*#{leaderCost};
         var calculateResources = function() {
-            var spent = parseInt($('#propaganda input').val(),10)
-                        + parseInt($('#investment input').val(),10)
-                        + ($('.fundedLeader').length - numSelfFunded) * #{leaderCost};
+            var spent = 0;
 
             var progress = $('#resourcesProgress div');
-            if( spent > #{turnResources}) {
-                progress.addClass('inDebt');
-                $('#remainingResources').text("- #{game.memeplexes[0].monetaryUnit}" + (spent - #{turnResources}));
-            } else {
-                progress.removeClass('inDebt');
-            $('#remainingResources').text("#{game.memeplexes[0].monetaryUnit}" + (#{turnResources} - spent));
-            }
-            var val = (#{turnResources} - spent) * 100 / progWidth;
+            $('#remainingResources').text((#{turnResources} - spent) + '£');
+            var val = (#{turnResources} - spent) * 100 / #{turnResources};
             progress.css('width',Math.floor(Math.abs(val)) + '%');
         };
-        $('.leaderFunding button').click( function(ev) {
-            ev.preventDefault();
-            
-            var i = $(this).children('input');
-            var v = i.attr('checked');
-            if( v) {
-                i.attr('checked',false);
-                $(this).removeClass('fundedLeader');
-            } else {
-                i.attr('checked',true);
-                $(this).addClass('fundedLeader');
-            }
-            
-            calculateResources();
-        });
-        $('#propaganda input').change( function() {calculateResources();});
-        $('#investment input').change( function() {calculateResources();});
-        calculateResources();
-
-        //distributionPage
-        $('.corpDetailButton').click( function(ev) {
-            ev.preventDefault();
-        });
         $('.localeDetailButton').click( function(ev) {
             ev.preventDefault();
         });
-        var lastChanged = -1;
-        var adjustCollection = function( collection, max, untouchable) {
-            if( !collection || collection.length == 0) {
-                if( untouchable && untouchable.length > 0)
-                    untouchable.val(max);
-                return; // just 1 item in group
-            }
 
-            var total = parseInt( untouchable.val(), 10);
-            collection.each( function(i,e) {total+=parseInt($(e).val(),10);});
-
-            if(lastChanged >= collection.length)
-                lastChanged = -1;
-
-            while( total != max) {
-                collection.each( function(i,e) {
-                    if(i>lastChanged) {
-                        var val = parseInt($(e).val(),10);
-                        if( total != max) {
-                            lastChanged = (i==(collection.length-1))?lastChanged=-1:i;
-                            if( total > max && val > 0) {
-                                $(e).val( val - 1);
-                                total--;
-                            } else if( total < max && val < max) {
-                                $(e).val( val + 1);
-                                total++;
-                            }
-                        }
-                    }
-                });
-            }
-        };
-        $('.localeDetailButton input').change( function() {
-            adjustCollection($('.localeDetailButton input[name!="' + $(this).attr('name') +'"]'),100, $(this));
-        });
-        $('.corpDetailButton input').change( function() {
-            adjustCollection($('.corpDetailButton input[name!="' + $(this).attr('name') +'"]'),100, $(this));
+        //charactersPage
+        $('.memberDetailButton').click( function(ev) {
+            ev.preventDefault();
         });
         
-        //investmentPage
-        $('.investmentDetailButton').click( function(ev) {
-            ev.preventDefault();
-        });
-        $('.propagandaDetailButton').click( function(ev) {
-            ev.preventDefault();
-        });
-        $('.investmentDetailButton input').change( function() {
-            adjustCollection($('.investmentDetailButton input[name!="' + $(this).attr('name') +'"]'),100, $(this));
-        });
-        $('.propagandaDetailButton input').change( function() {
-            adjustCollection($('.propagandaDetailButton input[name!="' + $(this).attr('name') +'"]'),100, $(this));
-        });
-
-        //memeplexesPage
-        $('.memeplexDetailButton').click( function(ev) {
-            ev.preventDefault();
-        });
+        //mapPage
+        //courtPage
+        //historyPage
+        //settingsPage
+      });
+  else
+    script.
+      $(document).ready( function() {
+          $('#settingsPage').removeClass('notShown');
       });

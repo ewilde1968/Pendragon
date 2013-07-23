@@ -5,8 +5,7 @@ block content
   cancelUrl = '/user/' + accountId
   a(href=cancelUrl)
     button Cancel
-  a#startbutton
-    button Start
+  button#startbutton Start
   formUrl = '/user/' + accountId + '/game/new'
   form( action=formUrl, method="POST")
     fieldset

@@ -10,7 +10,7 @@ var Game = require('./../model/game'),
 exports.newGame = function(req, res, next){
     res.render('initialsettings',
                {accountId:req.params.userid,
-                memeplexes:defaultObjects.memeplexes
+                families:defaultObjects.families
                });
 
 };
@@ -18,7 +18,7 @@ exports.newGame = function(req, res, next){
 //app.post('/user/:userid/game/new', user.ensureSignedIn, game.createGame);
 exports.createGame = function( req, res, next) {
     Game.factory({difficulty:req.body.difficulty,
-                  memeplex:req.body.memeplex
+                  family:req.body.family
                  },
                  req.session.userId,
                  function(err, game) {
@@ -38,8 +38,7 @@ var showGameHome = function( req, res, game) {
                {accountId:req.params.userid,
                 gameId:req.params.gameid,
                 game:game,
-                leaderCost:100,
-                turnResources:game?game.memeplexes[0].availableResources():0
+                turnResources:game.families[0].resources()
                });
 };
 
