@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  p New Game
+  cancelUrl = '/user/' + accountId
+  a(href=cancelUrl)
+    button Cancel
+  a#startbutton
+    button Start
+  formUrl = '/user/' + accountId + '/game/new'
+  form( action=formUrl, method="POST")
+    fieldset
+      label(for="family") Family to play
+      select(name="family", id="familyselect")
+        each family in families
+          option(value=family.name) #{family.name}
+      label(for="difficulty") Difficulty
+      select(name="difficulty", id="diffulty")
+        option(value="Tutorial") Tutorial
+        option(value="Easy") Easy
+        option(value="Normal") Normal
+        option(value="Hard") Hard
+
+  script.
+    $(document).ready( function() {
+        $('#startbutton').click( function() {$('form').submit();});
+    });
