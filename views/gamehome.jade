@@ -3,7 +3,8 @@ extends layout
 block content
   - var turnOnMenu = game && game.families[0];
   script.
-    var localesA = new Array();
+    //var socket = io.connect('http://10.0.1.10');
+    var socket = io.connect('http://localhost');
 
   #sidebar
     if turnOnMenu
@@ -55,22 +56,27 @@ block content
           p 0£
         #locales.horizontalList
           each locale in game.families[0].locales
-            script.
-              localesA.push({name:'#{locale.name}',
-                            income:#{locale.income},
-                            cost:#{locale.cost}});
             .localeSummary
-              button.localeDetailButton
+              button.localeDetailButton(data-id='#{locale.id}', data-income='#{locale.income}')
                 p #{locale.name}
                 p.localeIncome Income: #{locale.income}£
                 p.localeCost Cost: #{locale.cost}£
       fieldset#charactersPage(class='notShown')
-        #characters.horizontalList
+        #characters
           each member in game.families[0].members
-            button.memberDetailButton
+            button.memberDetailButton(data-id='#{member.id}')
               p #{member.name}
+              p #{member.class}
       fieldset#mapPage(class='notShown')
       fieldset#courtPage(class='notShown')
+        if game.turn.quarter == 'Winter'
+          p No Winter Court
+        if game.turn.quarter == 'Spring'
+          p Pentacost Court
+        if game.turn.quarter == 'Summer'
+          p No Summer Court
+        if game.turn.quarter == 'Fall'
+          p Christmas Court
       fieldset#historyPage(class='notShown')
     fieldset#settingsPage(class='notShown')
       a(href='/') Logout
@@ -78,6 +84,18 @@ block content
       a(href=newGameURL) New Game
       .multilist
         ul.listgroup
+    fieldset#memberDetailPage(class='notShown')
+      p#memberName
+      p#memberClass
+      p#memberAge
+      p#health
+      p#armor
+      p#shield
+    fieldset#localeDetailPage(class='notShown')
+      p#localeName
+      p#localeIncome
+      p#localeCost
+      p#steward
 
   if turnOnMenu
     script.
@@ -98,10 +116,10 @@ block content
         $('#historyMenu').click( function() {showPage('#historyPage');});
         $('#settingsMenu').click( function() {showPage('#settingsPage');});
         $('#turnCounter button').click(function() {
-            $('form').submit();
+            $('#content').submit();
         });
 
-        //expendituresPage
+        //resources area
         var calculateSpent = function() {
             var spent = parseInt($('#clothing input').val(),10);
             switch( $('#livingStyle').val()) {
@@ -123,7 +141,7 @@ block content
         };
         var calculateIncome = function() {
             var result = #{game.families[0].cash};
-            localesA.forEach( function(l) {result+=l.income;});
+            $('.localeDetailButton').each( function() {result+=$(this).data('income');});
             $('#resources p').text( 'Resources ' + result + '£');
             $('#clothing input').attr('max',result);
             return result;
@@ -142,19 +160,38 @@ block content
             var val = (have - spent) * 100 / have;
             progress.css('width',Math.floor(Math.abs(val)) + '%');
         };
+        calculateResources();
+
+        //expendituresPage
         $('.localeDetailButton').click( function(ev) {
             ev.preventDefault();
+            socket.emit('locale', '#{gameId}', $(this).data('id'), function(data,steward) {
+                $('#localeName').text( data.name);
+                $('#localeIncome').text( 'Income: ' + data.income + '£');
+                $('#localeCost').text( 'Cost: ' + data.cost + '£');
+                if( steward)
+                    $('#steward').text( 'Steward: ' + steward.name);
+                showPage('#localeDetailPage');
+            });
         });
         $('#clothing input').change( function() {
             $('#clothing p').text( $(this).val() + '£');
             calculateResources();
         });
         $('#livingStyle').change( function() {calculateResources();});
-        calculateResources();
 
         //charactersPage
         $('.memberDetailButton').click( function(ev) {
             ev.preventDefault();
+            socket.emit('member', '#{gameId}', $(this).data('id'), function(data) {
+                $('#memberName').text( data.name);
+                $('#memberClass').text( data.class);
+                $('#memberAge').text( data.age);
+                $('#health').text( data.health);
+                if( data.armor && data.armor.length > 0)
+                    $('#armor').text( data.armor + (data.shield?' and Shield':''));
+                showPage('#memberDetailPage');
+            });
         });
         
         //mapPage

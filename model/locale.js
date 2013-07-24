@@ -9,7 +9,8 @@ var mongoose = require('mongoose'),
 var LocaleSchema = new Schema( {
     name:           { type:String, required:true },
     income:         Number,
-    cost:           Number
+    cost:           Number,
+    steward:        ObjectId
 });
 
 

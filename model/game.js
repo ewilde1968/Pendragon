@@ -22,7 +22,7 @@ GameSchema.statics.factory = function( settings, ownerId, cb) {
     var result = new Game({owner:ownerId,
                            settings:settings,
                            state:'initial',
-                           turn:{year:490,quarter:"New Year"}
+                           turn:{year:490,quarter:"Winter"}
                           });
 
     defaultObjects.families.forEach( function(memeTemplate) {

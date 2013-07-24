@@ -4,7 +4,8 @@
  */
 var Game = require('./../model/game'),
     Account = require('./../model/account'),
-    defaultObjects = require('./../model/defaultObjects');
+    defaultObjects = require('./../model/defaultObjects'),
+    Character = require('./../model/character');
 
 //app.get('/user/:userid/game/new', user.ensureSignedIn, game.newGame);
 exports.newGame = function(req, res, next){
@@ -58,5 +59,27 @@ exports.update = function( req, res, next) {
             if(err) return err;
             showGameHome( req, res, game);
         });
+    });
+};
+
+//socket.io request to get family member data for member details page
+exports.getMember = function( gameId, memberId, cb) {
+    Game.findById( gameId, function(err,game) {
+        if(err) return err;
+
+        if( game && game.families && game.families.length > 0 && cb)
+            cb( game.families[0].getMember( memberId));
+    });
+};
+
+//socket.io request to get locale data for locale details page
+exports.getLocale = function( gameId, localeId, cb) {
+    Game.findById( gameId, function(err,game) {
+        if(err) return err;
+
+        if( game && game.families && game.families.length > 0 && cb) {
+            var l = game.families[0].getLocale( localeId);
+            cb( l, (l&&l.steward)?game.families[0].getMember( l.steward):null);
+        }
     });
 };
