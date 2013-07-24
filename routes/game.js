@@ -37,8 +37,7 @@ var showGameHome = function( req, res, game) {
     res.render( 'gamehome',
                {accountId:req.params.userid,
                 gameId:req.params.gameid,
-                game:game,
-                turnResources:game?game.families[0].resources():0
+                game:game
                });
 };
 

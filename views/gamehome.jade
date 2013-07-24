@@ -38,10 +38,10 @@ block content
   form#content( action=formUrl, method="POST")
     if turnOnMenu
       #resources
-        p Resources #{turnResources}£
+        p calculating...
         #resourcesProgress
           div
-        p#remainingResources #{turnResources}£
+        p#remainingResources calculating...
       fieldset#expendituresPage
         label(for='livingStyle') Living Style
         select(name='livingStyle', id='livingStyle')
@@ -51,7 +51,7 @@ block content
           option(value='Opulent') Opulent
         #clothing
           label(for='clothing') Clothing and Accoutrements
-          input(type='range', name='clothing', max=turnResources, value=0)
+          input(type='range', name='clothing', max=6, value=0)
           p 0£
         #locales.horizontalList
           each locale in game.families[0].locales
@@ -109,14 +109,14 @@ block content
                 spent += 1;
                 break;
             case 'Rich':
-                spent += 9;
+                spent += 8;
                 break;
             case 'Opulent':
                 spent += 12;
                 break;
             case 'Normal':
             default:
-                spent += 6;
+                spent += 4;
                 break;
             }
             return spent;
