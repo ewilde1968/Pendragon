@@ -11,13 +11,17 @@ var mongoose = require('mongoose'),
 var FamilySchema = new Schema( {
     name:           { type:String, required:true },
     locales:        [Locale.schema],
-    members:        [Character.schema]
+    members:        [Character.schema],
+    cash:           Number
 });
 
 
 FamilySchema.statics.factory = function( template, settings, cb) {
-    var result = new Family({name:template.name
+    var result = new Family({name:template.name,
+                             cash:0
                             });
+
+    result.locales.push( Locale.factory( template.locale));
 
     if(!!result && !!cb)
         cb(result);

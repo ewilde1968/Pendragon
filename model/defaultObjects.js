@@ -1,10 +1,13 @@
 var defaultObjects = {
     families:[
-            {name:'As'
+            {name:'As',
+             locale: 'A Farm'
             },
-            {name:'Bs'
+            {name:'Bs',
+             locale: 'B Town'
             },
-            {name:'Cs'
+            {name:'Cs',
+             locale: 'C Farm'
             }
     ]
 };

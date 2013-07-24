@@ -2,6 +2,8 @@ extends layout
 
 block content
   - var turnOnMenu = game && game.families[0];
+  script.
+    var localesA = new Array();
 
   #sidebar
     if turnOnMenu
@@ -41,11 +43,27 @@ block content
           div
         p#remainingResources #{turnResources}£
       fieldset#expendituresPage
+        label(for='livingStyle') Living Style
+        select(name='livingStyle', id='livingStyle')
+          option(value='Poor') Poor
+          option(value='Normal', selected='true') Normal
+          option(value='Rich') Rich
+          option(value='Opulent') Opulent
+        #clothing
+          label(for='clothing') Clothing and Accoutrements
+          input(type='range', name='clothing', max=turnResources, value=0)
+          p 0£
         #locales.horizontalList
           each locale in game.families[0].locales
-            button.localeDetailButton
-              label(for=locale.name) #{locale.name}
-              input(type="range", name=locale.name, value=locale.taxation)
+            script.
+              localesA.push({name:'#{locale.name}',
+                            income:#{locale.income},
+                            cost:#{locale.cost}});
+            .localeSummary
+              button.localeDetailButton
+                p #{locale.name}
+                p.localeIncome Income: #{locale.income}£
+                p.localeCost Cost: #{locale.cost}£
       fieldset#charactersPage(class='notShown')
         #characters.horizontalList
           each member in game.families[0].members
@@ -84,17 +102,55 @@ block content
         });
 
         //expendituresPage
+        var calculateSpent = function() {
+            var spent = parseInt($('#clothing input').val(),10);
+            switch( $('#livingStyle').val()) {
+            case 'Poor':
+                spent += 1;
+                break;
+            case 'Rich':
+                spent += 9;
+                break;
+            case 'Opulent':
+                spent += 12;
+                break;
+            case 'Normal':
+            default:
+                spent += 6;
+                break;
+            }
+            return spent;
+        };
+        var calculateIncome = function() {
+            var result = #{game.families[0].cash};
+            localesA.forEach( function(l) {result+=l.income;});
+            $('#resources p').text( 'Resources ' + result + '£');
+            $('#clothing input').attr('max',result);
+            return result;
+        };
         var calculateResources = function() {
-            var spent = 0;
-
+            var spent = calculateSpent();
+            var have = calculateIncome();
             var progress = $('#resourcesProgress div');
-            $('#remainingResources').text((#{turnResources} - spent) + '£');
-            var val = (#{turnResources} - spent) * 100 / #{turnResources};
+            if( spent > have) {
+                progress.addClass('inDebt');
+                $('#remainingResources').text('-' + (spent - have) + '£');
+            } else {
+                progress.removeClass('inDebt');
+                $('#remainingResources').text((have - spent) + '£');
+            }
+            var val = (have - spent) * 100 / have;
             progress.css('width',Math.floor(Math.abs(val)) + '%');
         };
         $('.localeDetailButton').click( function(ev) {
             ev.preventDefault();
         });
+        $('#clothing input').change( function() {
+            $('#clothing p').text( $(this).val() + '£');
+            calculateResources();
+        });
+        $('#livingStyle').change( function() {calculateResources();});
+        calculateResources();
 
         //charactersPage
         $('.memberDetailButton').click( function(ev) {

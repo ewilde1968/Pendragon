@@ -7,12 +7,16 @@ var mongoose = require('mongoose'),
     ObjectId = Schema.ObjectId;
 
 var LocaleSchema = new Schema( {
-    name:           { type:String, required:true }
+    name:           { type:String, required:true },
+    income:         Number,
+    cost:           Number
 });
 
 
-LocaleSchema.statics.factory = function( name) {
-    var result = new Locale({name:name
+LocaleSchema.statics.factory = function( name, cb) {
+    var result = new Locale({name:name,
+                             income:6,
+                             cost:0
                             });
 
     if(!!result && !!cb)
