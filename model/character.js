@@ -75,6 +75,8 @@ CharacterSchema.statics.factory = function( template, firstKnight, cb) {
             result.skills.push( Skill.factory( {name:'Swordsmanship', level:Skill.descriptions[3]}));
             result.skills.push( Skill.factory( {name:'Horsemanship', level:Skill.descriptions[3]}));
             result.skills.push( Skill.factory( {name:'Spear', level:Skill.descriptions[3]}));
+            result.armor = 'Chain Hauberk';
+            result.shield = true;
             break;
         case 'Lady':
             if( !template.age)
@@ -88,6 +90,14 @@ CharacterSchema.statics.factory = function( template, firstKnight, cb) {
                 result.age = 16;
             result.spirit = Character.descriptions[ Character.descriptions.indexOf( result.spirit) - 1];
             // will add to body when they reach 21
+            result.skills.push( Skill.factory( {name:'Swordsmanship', level:Skill.descriptions[1]}));
+            result.skills.push( Skill.factory( {name:'Horsemanship', level:Skill.descriptions[1]}));
+            result.skills.push( Skill.factory( {name:'Spear', level:Skill.descriptions[1]}));
+            break;
+        case 'Steward':
+            if( !template.age)
+                result.age = 21;
+            result.skills.push( Skill.factory( {name:'Steward', level:Skill.descriptions[3]}));
             result.skills.push( Skill.factory( {name:'Swordsmanship', level:Skill.descriptions[1]}));
             result.skills.push( Skill.factory( {name:'Horsemanship', level:Skill.descriptions[1]}));
             result.skills.push( Skill.factory( {name:'Spear', level:Skill.descriptions[1]}));

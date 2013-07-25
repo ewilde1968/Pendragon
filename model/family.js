@@ -10,7 +10,7 @@ var mongoose = require('mongoose'),
 
 var FamilySchema = new Schema( {
     name:           { type:String, required:true },
-    locales:        [Locale.schema],
+    holdings:       [Locale.schema],
     members:        [Character.schema],
     cash:           Number,
     specialty:      String
@@ -22,13 +22,19 @@ FamilySchema.statics.factory = function( template, settings, cb) {
                              cash:0
                             });
 
-    result.locales.push( Locale.factory( template.locale));
-    result.members.push( Character.factory({name:'first knight',
-                                            class:'Knight',
-                                            armor:'Chain Hauberk',
-                                            shield:true
-                                           },
-                                           true));
+    var firstKnight = Character.factory({name:'first knight',
+                                         class:'Knight'
+                                        }, true);
+    var firstSteward = Character.factory({name:'first steward',
+                                          class:'Steward'
+                                         });
+    result.members.push( firstKnight);
+    result.members.push( firstSteward);
+
+    var holding = Locale.factory( template.locale);
+    holding.addSteward( firstSteward);
+    result.holdings.push( holding);
+
     result.generateSpecialty();
 
     if(!!result && !!cb)
@@ -56,8 +62,8 @@ FamilySchema.methods.getMember = function(id) {
     return this.members.id(id);
 };
 
-FamilySchema.methods.getLocale = function(id) {
-    return this.locales.id(id);
+FamilySchema.methods.getHolding = function(id) {
+    return this.holdings.id(id);
 };
 
 

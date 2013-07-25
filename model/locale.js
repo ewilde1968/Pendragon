@@ -14,10 +14,10 @@ var LocaleSchema = new Schema( {
 });
 
 
-LocaleSchema.statics.factory = function( name, cb) {
-    var result = new Locale({name:name,
-                             income:6,
-                             cost:0
+LocaleSchema.statics.factory = function( template, cb) {
+    var result = new Locale({name:template.name,
+                             income:template.income?template.income:6,
+                             cost:1
                             });
 
     if(!!result && !!cb)
@@ -26,6 +26,17 @@ LocaleSchema.statics.factory = function( name, cb) {
     return result;
 };
 
+LocaleSchema.methods.addSteward = function(s) {
+    if( this.steward)
+        this.cost--;
+
+    if( s) {
+        this.steward = s.id;
+        if( 'Steward' == s.class)
+            this.cost++;
+    } else
+        delete this.steward;
+};
 
 var Locale = mongoose.model('Locale', LocaleSchema);
 module.exports = Locale;

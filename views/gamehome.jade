@@ -54,10 +54,10 @@ block content
           label(for='clothing') Clothing and Accoutrements
           input(type='range', name='clothing', max=6, value=0)
           p 0£
-        #locales.horizontalList
-          each locale in game.families[0].locales
-            .localeSummary
-              button.localeDetailButton(data-id='#{locale.id}', data-income='#{locale.income}')
+        #holdings.horizontalList
+          each locale in game.families[0].holdings
+            .holdingSummary
+              button.localeDetailButton(data-id='#{locale.id}', data-income='#{locale.income}', data-cost='#{locale.cost}')
                 p #{locale.name}
                 p.localeIncome Income: #{locale.income}£
                 p.localeCost Cost: #{locale.cost}£
@@ -141,6 +141,7 @@ block content
                 spent += 4;
                 break;
             }
+            $('.localeDetailButton').each( function() {spent+=$(this).data('cost');});
             return spent;
         };
         var calculateIncome = function() {
@@ -201,6 +202,10 @@ block content
                 });
                 if( data.armor && data.armor.length > 0)
                     $('#armor').text( data.armor + (data.shield?' and Shield':''));
+                else if( data.shield)
+                    $('#armor').text( 'Shield');
+                else
+                    $('#armor').empty();
                 showPage('#memberDetailPage');
             });
         });

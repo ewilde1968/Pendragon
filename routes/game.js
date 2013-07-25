@@ -78,7 +78,7 @@ exports.getLocale = function( gameId, localeId, cb) {
         if(err) return err;
 
         if( game && game.families && game.families.length > 0 && cb) {
-            var l = game.families[0].getLocale( localeId);
+            var l = game.families[0].getHolding( localeId);
             cb( l, (l&&l.steward)?game.families[0].getMember( l.steward):null);
         }
     });
