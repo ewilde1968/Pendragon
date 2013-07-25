@@ -92,6 +92,7 @@ block content
       p#body
       p#mind
       p#spirit
+      #skills
       p#armor
       p#shield
     fieldset#localeDetailPage(class='notShown')
@@ -194,6 +195,10 @@ block content
                 $('#body').text( 'Body: ' + data.body);
                 $('#mind').text( 'Mind: ' + data.mind);
                 $('#spirit').text( 'Spirit: ' + data.spirit);
+                $('#skills').empty();
+                data.skills.forEach( function(s) {
+                    $('#skills').append($('<p></p>').text( s.name + ': ' + s.level));
+                });
                 if( data.armor && data.armor.length > 0)
                     $('#armor').text( data.armor + (data.shield?' and Shield':''));
                 showPage('#memberDetailPage');
