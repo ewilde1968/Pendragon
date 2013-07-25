@@ -1,3 +1,5 @@
+var module; // forward to clear out JSLint errors
+
 var defaultObjects = {
     families: [
         {

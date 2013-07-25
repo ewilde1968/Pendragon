@@ -1,6 +1,7 @@
 /*
  * Character model
 */
+var Character, require, module; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,

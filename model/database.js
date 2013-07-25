@@ -2,6 +2,9 @@
 /*
  * Database mdoel
  */
+var Database, require, module; // forward to clear out JSLint errors
+
+
 module.exports = Database;
 
 var mongoose = require('mongoose'),

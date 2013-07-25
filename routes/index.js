@@ -2,6 +2,8 @@
 /*
  * GET home page.
  */
+var exports, require, module; // forward to clear out JSLint errors
+
 var Account = require('./../model/account');
 
 //app.get('/', routes.index);

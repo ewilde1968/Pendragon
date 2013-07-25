@@ -2,6 +2,8 @@
 /*
  * GET home page.
  */
+var exports, require, module; // forward to clear out JSLint errors
+
 var Game = require('./../model/game'),
     Account = require('./../model/account'),
     defaultObjects = require('./../model/defaultObjects'),

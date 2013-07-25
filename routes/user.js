@@ -2,6 +2,8 @@
 /*
  * users routes
  */
+var exports, require, module; // forward to clear out JSLint errors
+
 var Account = require('./../model/account');
 
 //app.use( function(q,r,n) {user.ensureSignedIn(q,r,n);});

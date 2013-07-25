@@ -3,6 +3,8 @@
  * User model
 */
 
+var Account, require, module; // forward to clear out JSLint errors
+
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId;
@@ -41,5 +43,5 @@ AccountSchema.statics.login = function (username, password, cb) {
     var acct = Account.findOne({email: username, password: password}, cb);
 };
 
-var Account = mongoose.model('Account', AccountSchema);
+Account = mongoose.model('Account', AccountSchema);
 module.exports = Account;
