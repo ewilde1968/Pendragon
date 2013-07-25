@@ -107,30 +107,30 @@ block content
 
   if turnOnMenu
     script.
-      $(document).ready( function() {
+      $(document).ready(function () {
         // menu
         var pageShown = '#expendituresPage';
-        var showPage = function( pageToShow) {
-            if( pageShown != pageToShow) {
+        var showPage = function (pageToShow) {
+            if (pageShown != pageToShow) {
                 $(pageShown).addClass('notShown');
                 pageShown = pageToShow;
                 $(pageShown).removeClass('notShown');
             }
         };
-        $('#expendituresMenu').click( function() {showPage('#expendituresPage');});
-        $('#charactersMenu').click( function() {showPage('#charactersPage');});
-        $('#mapMenu').click( function() {showPage('#mapPage');});
-        $('#courtMenu').click( function() {showPage('#courtPage');});
-        $('#historyMenu').click( function() {showPage('#historyPage');});
-        $('#settingsMenu').click( function() {showPage('#settingsPage');});
-        $('#turnCounter button').click(function() {
+        $('#expendituresMenu').click(function () {showPage('#expendituresPage'); });
+        $('#charactersMenu').click(function () {showPage('#charactersPage'); });
+        $('#mapMenu').click(function () {showPage('#mapPage'); });
+        $('#courtMenu').click(function () {showPage('#courtPage'); });
+        $('#historyMenu').click(function () {showPage('#historyPage'); });
+        $('#settingsMenu').click(function () {showPage('#settingsPage'); });
+        $('#turnCounter button').click(function () {
             $('#content').submit();
         });
 
         //resources area
-        var calculateSpent = function() {
-            var spent = parseInt($('#clothing input').val(),10);
-            switch( $('#livingStyle').val()) {
+        var calculateSpent = function () {
+            var spent = parseInt($('#clothing input').val(), 10);
+            switch ($('#livingStyle').val()) {
             case 'Poor':
                 spent += 1;
                 break;
@@ -145,21 +145,21 @@ block content
                 spent += 4;
                 break;
             }
-            $('.localeDetailButton').each( function() {spent+=$(this).data('cost');});
+            $('.localeDetailButton').each(function () {spent+=$(this).data('cost'); });
             return spent;
         };
-        var calculateIncome = function() {
+        var calculateIncome = function () {
             var result = #{game.families[0].cash};
-            $('.localeDetailButton').each( function() {result+=$(this).data('income');});
-            $('#resources p').text( 'Resources ' + result + '£');
-            $('#clothing input').attr('max',result);
+            $('.localeDetailButton').each( function () {result+=$(this).data('income'); });
+            $('#resources p').text('Resources ' + result + '£');
+            $('#clothing input').attr('max', result);
             return result;
         };
-        var calculateResources = function() {
-            var spent = calculateSpent();
-            var have = calculateIncome();
-            var progress = $('#resourcesProgress div');
-            if( spent > have) {
+        var calculateResources = function () {
+            var spent = calculateSpent(),
+                have = calculateIncome(),
+                progress = $('#resourcesProgress div');
+            if (spent > have) {
                 progress.addClass('inDebt');
                 $('#remainingResources').text('-' + (spent - have) + '£');
             } else {
@@ -167,53 +167,54 @@ block content
                 $('#remainingResources').text((have - spent) + '£');
             }
             var val = (have - spent) * 100 / have;
-            progress.css('width',Math.floor(Math.abs(val)) + '%');
+            progress.css('width', Math.floor(Math.abs(val)) + '%');
         };
         calculateResources();
 
         //expendituresPage
-        $('.localeDetailButton').click( function(ev) {
+        $('.localeDetailButton').click(function (ev) {
             ev.preventDefault();
-            socket.emit('locale', '#{gameId}', $(this).data('id'), function(data,steward) {
-                $('#localeName').text( data.name);
-                $('#localeIncome').text( 'Income: ' + data.income + '£');
-                $('#localeCost').text( 'Cost: ' + data.cost + '£');
-                if( steward)
-                    $('#steward').text( 'Steward: ' + steward.name);
+            socket.emit('locale', '#{gameId}', $(this).data('id'), function (data, steward) {
+                $('#localeName').text(data.name);
+                $('#localeIncome').text('Income: ' + data.income + '£');
+                $('#localeCost').text('Cost: ' + data.cost + '£');
+                if (steward)
+                    $('#steward').text('Steward: ' + steward.name);
                 showPage('#localeDetailPage');
             });
         });
-        $('#clothing input').change( function() {
-            $('#clothing p').text( $(this).val() + '£');
+        $('#clothing input').change(function () {
+            $('#clothing p').text($(this).val() + '£');
             calculateResources();
         });
-        $('#livingStyle').change( function() {calculateResources();});
-        if( '#{game.turn.quarter}' != 'Winter') {
-            $('#livingStyle').attr('disabled',true);
-            $('#clothing input').attr('disabled',true);
+        $('#livingStyle').change(function () {calculateResources(); });
+        if ('#{game.turn.quarter}' != 'Winter') {
+            $('#livingStyle').attr('disabled', true);
+            $('#clothing input').attr('disabled', true);
         }
 
         //charactersPage
-        $('.memberDetailButton').click( function(ev) {
+        $('.memberDetailButton').click(function (ev) {
             ev.preventDefault();
-            socket.emit('member', '#{gameId}', $(this).data('id'), function(data) {
-                $('#memberName').text( data.name);
-                $('#memberProfession').text( data.profession);
-                $('#memberAge').text( 'Age: ' + data.age);
-                $('#health').text( 'Health: ' + data.health);
-                $('#body').text( 'Body: ' + data.body);
-                $('#mind').text( 'Mind: ' + data.mind);
-                $('#spirit').text( 'Spirit: ' + data.spirit);
+            socket.emit('member', '#{gameId}', $(this).data('id'), function (data) {
+                $('#memberName').text(data.name);
+                $('#memberProfession').text(data.profession);
+                $('#memberAge').text('Age: ' + data.age);
+                $('#health').text('Health: ' + data.health);
+                $('#body').text('Body: ' + data.body);
+                $('#mind').text('Mind: ' + data.mind);
+                $('#spirit').text('Spirit: ' + data.spirit);
                 $('#skills').empty();
-                data.skills.forEach( function(s) {
-                    $('#skills').append($('<p></p>').text( s.name + ': ' + s.level));
+                data.skills.forEach(function (s) {
+                    $('#skills').append($('<p></p>').text(s.name + ': ' + s.level));
                 });
-                if( data.armor && data.armor.length > 0)
-                    $('#armor').text( data.armor + (data.shield?' and Shield':''));
-                else if( data.shield)
-                    $('#armor').text( 'Shield');
-                else
+                if (data.armor && data.armor.length > 0) {
+                    $('#armor').text(data.armor + (data.shield ? ' and Shield' : ''));
+                } else if (data.shield) {
+                    $('#armor').text('Shield');
+                } else {
                     $('#armor').empty();
+                }
                 showPage('#memberDetailPage');
             });
         });
@@ -224,17 +225,17 @@ block content
         //settingsPage
 
         //eventDetailPage
-        var nextEvent = function() {
+        var nextEvent = function () {
             var evs = $('.eventDetailPage');
-            if( evs && evs.length > 0) {
-                showPage( '#' + evs[0].id);
-                $('#sidebar button').attr('disabled',true);
+            if (evs && evs.length > 0) {
+                showPage('#' + evs[0].id);
+                $('#sidebar button').attr('disabled', true);
             } else {
-                showPage( '#expendituresPage');
+                showPage('#expendituresPage');
                 $('#sidebar button').removeAttr('disabled');
             }
         };
-        $('.eventDetailDone').click( function(ev) {
+        $('.eventDetailDone').click(function (ev) {
             ev.preventDefault();
             $(this).parent().remove();
             nextEvent();
@@ -243,6 +244,6 @@ block content
       });
   else
     script.
-      $(document).ready( function() {
+      $(document).ready(function () {
           $('#settingsPage').removeClass('notShown');
       });
