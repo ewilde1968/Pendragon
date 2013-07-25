@@ -1,23 +1,28 @@
 var defaultObjects = {
-    families:[
-        {name:'Langley',
-         locale:{name:'Langley Valley'}
+    families: [
+        {
+            name: 'Langley',
+            locale: {name: 'Langley Valley'}
         },
-        {name:'Chesham',
-         locale:{name:'Chesham'}
+        {
+            name: 'Chesham',
+            locale: {name: 'Chesham'}
         },
-        {name:'Harpenden',
-         locale:{name:'Harpenden Wood'}
+        {
+            name: 'Harpenden',
+            locale: {name: 'Harpenden Wood'}
         }
     ],
-    timelineEvents:[
-        {year:490,
-         quarter:'Winter',
-         message:'Welcome'
+    timelineEvents: [
+        {
+            year: 490,
+            quarter: 'Winter',
+            message: 'Welcome'
         },
-        {year:490,
-         quarter:'Spring',
-         message:"Summons to King Uther's Court"
+        {
+            year: 490,
+            quarter: 'Spring',
+            message: "Summons to King Uther's Court"
         }
     ]
 };

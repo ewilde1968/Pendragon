@@ -27,8 +27,8 @@ app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // development only
-if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
+if ('development' === app.get('env')) {
+    app.use(express.errorHandler());
 }
 
 app.get('/', routes.index);
@@ -48,11 +48,12 @@ app.database.initialize();
 
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
-server.listen(app.get('port'), function(){
+server.listen(app.get('port'), function () {
+    "use strict";
     console.log('Express server listening on port ' + app.get('port'));
 });
 
-io.sockets.on('connection', function(socket) {
+io.sockets.on('connection', function (socket) {
     console.log('Socket.IO connected');
     
     socket.on('member', game.getMember);

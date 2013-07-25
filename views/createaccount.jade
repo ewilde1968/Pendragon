@@ -22,28 +22,28 @@ block content
         button Submit
 
   script.
-    $(document).ready( function() {
-        if( #{err})
-            $('#errorP').removeClass('notShown');
+    $(document).ready(function () {
+        if (#{err}) {$('#errorP').removeClass('notShown'); }
 
-        $('form').submit( function() {
+        $('form').submit(function () {
             // validate form
-            var good = true;
-
-            var obj = $('input[name="password"]');
-            var x = obj.val();
-            if( !x || x == "") {
+            var good = true,
+                obj = $('input[name="password"]'),
+                x = obj.val();
+            if (!x || x === '') {
                 good = false;
-                obj.addClass( 'inputError');
-            } else
-                obj.removeClass( 'inputError');
+                obj.addClass('inputError');
+            } else {
+                obj.removeClass('inputError');
+            }
 
             obj = $('input[name="verifyPassword"]');
-            if( obj.val() != x ) {
+            if (obj.val() != x) {
                 good = false;
-                obj.addClass( 'inputError');
-            } else
-                obj. removeClass( 'inputError');
+                obj.addClass('inputError');
+            } else {
+                obj.removeClass('inputError');
+            }
 
             return good;
         });

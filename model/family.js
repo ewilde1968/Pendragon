@@ -10,8 +10,8 @@ var mongoose = require('mongoose'),
     TimelineEvent = require('./timelineevent');
 
 
-var FamilySchema = new Schema( {
-    name:           { type:String, required:true },
+var FamilySchema = new Schema({
+    name:           { type: String, required: true },
     holdings:       [Locale.schema],
     members:        [Character.schema],   // patriarch is always zeroeth member
     cash:           Number,
@@ -20,75 +20,80 @@ var FamilySchema = new Schema( {
 });
 
 
-FamilySchema.statics.factory = function( template, settings, cb) {
-    var result = new Family({name:template.name,
-                             cash:0
-                            });
+FamilySchema.statics.factory = function (template, settings) {
+    "use strict";
+    var result = new Family({name: template.name,
+                             cash: 0
+                            }),
+        firstKnight = Character.factory({name: 'first knight',
+                                         profession: 'Knight'
+                                        }, true),
+        firstSteward = Character.factory({name: 'first steward',
+                                          profession: 'Steward'
+                                         }),
+        holding = Locale.factory(template.locale);
 
-    var firstKnight = Character.factory({name:'first knight',
-                                         class:'Knight'
-                                        }, true);
-    var firstSteward = Character.factory({name:'first steward',
-                                          class:'Steward'
-                                         });
-    result.members.push( firstKnight);   // patriarch is always zeroeth member
-    result.members.push( firstSteward);
+    result.members.push(firstKnight);   // patriarch is always zeroeth member
+    result.members.push(firstSteward);
 
-    var holding = Locale.factory( template.locale);
-    holding.addSteward( firstSteward);
-    result.holdings.push( holding);
+    holding.addSteward(firstSteward);
+    result.holdings.push(holding);
 
     result.generateSpecialty();
 
-    if(!!result && !!cb)
-        cb(result);
-    
     return result;
 };
 
 FamilySchema.methods.generateSpecialty = function () {
+    "use strict";
     // called only at family construction
     this.specialty = 'horsemanship';  // TODO
 };
 
-FamilySchema.methods.mergeOptions = function(options) {
+FamilySchema.methods.mergeOptions = function (options) {
+    "use strict";
 };
 
-FamilySchema.methods.endQuarter = function() {
+FamilySchema.methods.endQuarter = function () {
+    "use strict";
 };
 
-FamilySchema.methods.resources = function() {
+FamilySchema.methods.resources = function () {
+    "use strict";
     return 6;   // TODO
 };
 
-FamilySchema.methods.getMember = function(id) {
+FamilySchema.methods.getMember = function (id) {
+    "use strict";
     return this.members.id(id);
 };
 
-FamilySchema.methods.getHolding = function(id) {
+FamilySchema.methods.getHolding = function (id) {
+    "use strict";
     return this.holdings.id(id);
 };
 
-FamilySchema.methods.satisfies = function( requirements) {
+FamilySchema.methods.satisfies = function (requirements) {
+    "use strict";
     return true;    // TODO
 };
 
-FamilySchema.methods.getEvents = function( turn, result) {
-    if( !result)
-        result = new Array();
+FamilySchema.methods.getEvents = function (turn, result) {
+    "use strict";
+    if (!result) {result = []; }
 
     var qe = this.queuedEvents[turn.year];
-    if( qe && qe.length > 0) {
-        qe.forEach( function(e,i,a) {
-            if( e.quarter == turn.quarter && this.satisfies(e.requirements)) {
+    if (qe && qe.length > 0) {
+        qe.forEach(function (e, i, a) {
+            if (e.quarter === turn.quarter && this.satisfies(e.requirements)) {
                 result.push(e);
-                a.splice(i,1);
+                a.splice(i, 1);
             }
         });
     }
 
-    this.members.forEach( function(m) {
-        m.getEvents( turn, result);
+    this.members.forEach(function (m) {
+        m.getEvents(turn, result);
     });
 };
 

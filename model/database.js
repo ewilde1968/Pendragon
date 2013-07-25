@@ -8,15 +8,18 @@ var mongoose = require('mongoose'),
     defaultObjects = require('./defaultObjects');
 
 var connected = false;
-function Database (databaseName) {
-    if( !connected)
+function Database(databaseName) {
+    "use strict";
+    if (!connected) {
         mongoose.connect('mongodb://127.0.0.1/' + databaseName);
+    }
     connected = true;
     
     return this;
-};
+}
 
-Database.prototype.initialize = function() {
+Database.prototype.initialize = function () {
+    "use strict";
     /*  See if the database is setup properly and, if not, initialize. Default
         game objects should either go into the database as a template or should
         remain an object in memory as a template

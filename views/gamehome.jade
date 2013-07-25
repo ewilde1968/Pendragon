@@ -66,7 +66,7 @@ block content
           each member in game.families[0].members
             button.memberDetailButton(data-id='#{member.id}')
               p #{member.name}
-              p #{member.class}
+              p #{member.profession}
       fieldset#mapPage(class='notShown')
       fieldset#courtPage(class='notShown')
         if game.turn.quarter == 'Winter'
@@ -78,32 +78,32 @@ block content
         if game.turn.quarter == 'Fall'
           p Christmas Court
       fieldset#historyPage(class='notShown')
+      fieldset#memberDetailPage(class='notShown')
+        p#memberName
+        p#memberProfession
+        p#memberAge
+        p#health
+        p#body
+        p#mind
+        p#spirit
+        #skills
+        p#armor
+        p#shield
+      fieldset#localeDetailPage(class='notShown')
+        p#localeName
+        p#localeIncome
+        p#localeCost
+        p#steward
+      each ev in events
+        fieldset(class='notShown eventDetailPage', id='#{ev.id}')
+          p #{ev.message}
+          button.eventDetailDone Done
     fieldset#settingsPage(class='notShown')
       a(href='/') Logout
       newGameURL = '/user/' + accountId + '/game/new'
       a(href=newGameURL) New Game
       .multilist
         ul.listgroup
-    fieldset#memberDetailPage(class='notShown')
-      p#memberName
-      p#memberClass
-      p#memberAge
-      p#health
-      p#body
-      p#mind
-      p#spirit
-      #skills
-      p#armor
-      p#shield
-    fieldset#localeDetailPage(class='notShown')
-      p#localeName
-      p#localeIncome
-      p#localeCost
-      p#steward
-    each ev in events
-      fieldset(class='notShown eventDetailPage', id='#{ev.id}')
-        p #{ev.message}
-        button.eventDetailDone Done
 
   if turnOnMenu
     script.
@@ -198,7 +198,7 @@ block content
             ev.preventDefault();
             socket.emit('member', '#{gameId}', $(this).data('id'), function(data) {
                 $('#memberName').text( data.name);
-                $('#memberClass').text( data.class);
+                $('#memberProfession').text( data.profession);
                 $('#memberAge').text( 'Age: ' + data.age);
                 $('#health').text( 'Health: ' + data.health);
                 $('#body').text( 'Body: ' + data.body);
