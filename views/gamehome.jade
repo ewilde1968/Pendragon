@@ -89,6 +89,9 @@ block content
       p#memberClass
       p#memberAge
       p#health
+      p#body
+      p#mind
+      p#spirit
       p#armor
       p#shield
     fieldset#localeDetailPage(class='notShown')
@@ -186,8 +189,11 @@ block content
             socket.emit('member', '#{gameId}', $(this).data('id'), function(data) {
                 $('#memberName').text( data.name);
                 $('#memberClass').text( data.class);
-                $('#memberAge').text( data.age);
-                $('#health').text( data.health);
+                $('#memberAge').text( 'Age: ' + data.age);
+                $('#health').text( 'Health: ' + data.health);
+                $('#body').text( 'Body: ' + data.body);
+                $('#mind').text( 'Mind: ' + data.mind);
+                $('#spirit').text( 'Spirit: ' + data.spirit);
                 if( data.armor && data.armor.length > 0)
                     $('#armor').text( data.armor + (data.shield?' and Shield':''));
                 showPage('#memberDetailPage');

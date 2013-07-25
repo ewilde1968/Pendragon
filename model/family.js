@@ -24,8 +24,7 @@ FamilySchema.statics.factory = function( template, settings, cb) {
 
     result.locales.push( Locale.factory( template.locale));
     result.members.push( Character.factory({name:'first knight',
-                                            class:'knight',
-                                            age:16,
+                                            class:'Knight',
                                             armor:'Chain Hauberk',
                                             shield:true
                                            },
