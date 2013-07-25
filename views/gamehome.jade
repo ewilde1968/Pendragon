@@ -2,9 +2,6 @@ extends layout
 
 block content
   - var turnOnMenu = game && game.families[0];
-  script.
-    //var socket = io.connect('http://10.0.1.10');
-    var socket = io.connect('http://localhost');
 
   #sidebar
     if turnOnMenu
@@ -38,6 +35,9 @@ block content
   formUrl = '/user/' + accountId + '/game/' + gameId
   form#content( action=formUrl, method="POST")
     if turnOnMenu
+      script.
+        var socket = io.connect('http://10.0.1.9');
+        //var socket = io.connect('http://localhost');
       #resources
         p calculating...
         #resourcesProgress
@@ -100,6 +100,10 @@ block content
       p#localeIncome
       p#localeCost
       p#steward
+    each ev in events
+      fieldset(class='notShown eventDetailPage', id='#{ev.id}')
+        p #{ev.message}
+        button.eventDetailDone Done
 
   if turnOnMenu
     script.
@@ -184,6 +188,10 @@ block content
             calculateResources();
         });
         $('#livingStyle').change( function() {calculateResources();});
+        if( '#{game.turn.quarter}' != 'Winter') {
+            $('#livingStyle').attr('disabled',true);
+            $('#clothing input').attr('disabled',true);
+        }
 
         //charactersPage
         $('.memberDetailButton').click( function(ev) {
@@ -214,6 +222,24 @@ block content
         //courtPage
         //historyPage
         //settingsPage
+
+        //eventDetailPage
+        var nextEvent = function() {
+            var evs = $('.eventDetailPage');
+            if( evs && evs.length > 0) {
+                showPage( '#' + evs[0].id);
+                $('#sidebar button').attr('disabled',true);
+            } else {
+                showPage( '#expendituresPage');
+                $('#sidebar button').removeAttr('disabled');
+            }
+        };
+        $('.eventDetailDone').click( function(ev) {
+            ev.preventDefault();
+            $(this).parent().remove();
+            nextEvent();
+        });
+        nextEvent();
       });
   else
     script.

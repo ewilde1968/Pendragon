@@ -5,7 +5,8 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Skill = require('./skill');
+    Skill = require('./skill'),
+    TimelineEvent = require('./timelineevent');
 
 var CharacterSchema = new Schema( {
     name:           { type:String, required:true, index:true },
@@ -18,7 +19,8 @@ var CharacterSchema = new Schema( {
     skills:         [Skill.schema],
     armor:          String,
     shield:         Boolean,
-    horses:         [{name:String,breed:String,barding:String,health:String}]
+    horses:         [{name:String,breed:String,barding:String,health:String}],
+    queuedEvents:   [TimelineEvent.schema]
 });
 
 
@@ -117,6 +119,25 @@ CharacterSchema.statics.factory = function( template, firstKnight, cb) {
 CharacterSchema.statics.descriptions = ['Dead','Infirm','Feeble','Weak','Normal','Strong','Superlative','Mythic'];
 
 CharacterSchema.methods.fatherHistory = function() {
+};
+
+CharacterSchema.methods.satisfies = function(requirements) {
+    return true;    // TODO
+};
+
+CharacterSchema.methods.getEvents = function(turn, result) {
+    if( !result)
+        result = new Array();
+
+    var qe = this.queuedEvents[turn.year];
+    if( qe && qe.length > 0) {
+        qe.forEach( function(e,i,a) {
+            if( e.quarter == turn.quarter && this.satisfies(e.requirements)) {
+                result.push(e);
+                a.splice(i,1);
+            }
+        });
+    }
 };
 
 

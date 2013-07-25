@@ -38,7 +38,8 @@ var showGameHome = function( req, res, game) {
     res.render( 'gamehome',
                {accountId:req.params.userid,
                 gameId:req.params.gameid,
-                game:game
+                game:game,
+                events:game?game.getEvents():[]
                });
 };
 

@@ -7,7 +7,8 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     defaultObjects = require('./../model/defaultObjects'),
-    Family = require('./family');
+    Family = require('./family'),
+    TimelineEvent = require('./timelineevent');
 
 var GameSchema = new Schema( {
     owner:      { type:ObjectId, required:true },
@@ -42,10 +43,31 @@ GameSchema.methods.update = function(cb) {
     });
 };
 
-GameSchema.methods.timelineEvents = function() {};  // TODO
+GameSchema.methods.satisfies = function( requirements) {
+    return true;    // TODO
+};
+
+GameSchema.methods.getEvents = function(result) {
+    if( !result)
+        result = new Array();
+    
+    // add timeline events
+    var game = this;
+    defaultObjects.timelineEvents.forEach( function(e) {
+        if( e.year == game.turn.year && e.quarter == game.turn.quarter
+           && game.satisfies(e.requirements)) {
+            result.push( TimelineEvent.factory(e));
+        }
+    });
+    
+    // add family events
+    this.families[0].getEvents( game.turn, result);
+    
+    return result;
+};
 
 GameSchema.methods.mergeOptions = function( options) {
-    this.memeplexes[0].mergeOptions(options);
+    this.families[0].mergeOptions(options);
 };
 
 GameSchema.methods.nextTurn = function(cb) {
@@ -53,8 +75,25 @@ GameSchema.methods.nextTurn = function(cb) {
 
     // end quarter
     this.families.forEach( function(f) {f.endQuarter();});
+    switch( this.turn.quarter) {
+        case 'Winter':
+            this.turn.quarter = 'Spring';
+            break;
+        case 'Spring':
+            this.turn.quarter = 'Summer';
+            break;
+        case 'Summer':
+            this.turn.quarter = 'Fall';
+            break;
+        case 'Fall':
+            this.turn.quarter = 'Winter';
+            this.turn.year++;
+            break;
+        default:
+            throw 'Invalid quarter';
+    }
 
-    if(cb) cb(err,this);
+    this.update(cb);
 };
 
 
