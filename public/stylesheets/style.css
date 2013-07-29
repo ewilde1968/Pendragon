@@ -93,3 +93,15 @@ body {
 #resourcesProgress .inDebt {
     background-color:red;
 }
+
+.eventDetailPage,
+.subEventDetailPage {
+    position:fixed;
+    width:94%;
+    height:92%;
+    padding:1%;
+    margin:2%;
+    border-radius:10px;
+    border:1px solid black;
+    background:white;
+}

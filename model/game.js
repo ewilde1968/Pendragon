@@ -49,22 +49,22 @@ GameSchema.methods.satisfies = function (requirements) {
     return true;    // TODO
 };
 
-GameSchema.methods.getEvents = function (result) {
+GameSchema.methods.getEvents = function () {
     "use strict";
-    if (!result) {result = []; }
-    
+    var result = {shown: [], subEvents: []},
+        game = this;
+
+    // add family events first
+    this.families[0].getEvents(this.turn, result.shown);
+
     // add timeline events
-    var game = this;
     defaultObjects.timelineEvents.forEach(function (e) {
         if (e.year === game.turn.year && e.quarter === game.turn.quarter
                 && game.satisfies(e.requirements)) {
-            result.push(TimelineEvent.factory(e));
+            result.shown.push(TimelineEvent.factory(e, result.subEvents));
         }
     });
-    
-    // add family events
-    this.families[0].getEvents(game.turn, result);
-    
+
     return result;
 };
 

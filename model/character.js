@@ -13,14 +13,15 @@ var CharacterSchema = new Schema({
     name:           { type: String, required: true, index: true },
     profession:     { type: String, required: true },
     age:            Number,
-    health:         String,
-    body:           String,
-    mind:           String,
-    spirit:          String,
+    health:         Number,
+    body:           Number,
+    mind:           Number,
+    soul:           Number,
+    honor:          Number,
     skills:         [Skill.schema],
     armor:          String,
     shield:         Boolean,
-    horses:         [{name: String, breed: String, barding: String, health: String}],
+    horses:         [{name: String, breed: String, barding: String, health: Number}],
     queuedEvents:   [TimelineEvent.schema]
 });
 
@@ -30,34 +31,34 @@ var generateStats = function (character) {
     var focus = Math.floor(Math.random() * 5);
     switch (focus) {
     case 0: // ectomorph
-        character.body = Character.descriptions[3];
-        character.mind = Character.descriptions[5];
-        character.spirit = Character.descriptions[4];
-        character.skills.push(Skill.factory({name: 'Learning', level: Skill.descriptions[3]}));
+        character.body = 3;
+        character.mind = 5;
+        character.soul = 4;
+        character.skills.push(Skill.factory({name: 'Learning', level: 3}));
         break;
     case 1: // mesomorph
-        character.body = Character.descriptions[5];
-        character.mind = Character.descriptions[3];
-        character.spirit = Character.descriptions[4];
-        character.skills.push(Skill.factory({name: 'Brawling', level: Skill.descriptions[3]}));
+        character.body = 5;
+        character.mind = 3;
+        character.soul = 4;
+        character.skills.push(Skill.factory({name: 'Brawling', level: 3}));
         break;
     case 2: // spiritual ascetic
-        character.body = Character.descriptions[3];
-        character.mind = Character.descriptions[4];
-        character.spirit = Character.descriptions[5];
-        character.skills.push(Skill.factory({name: 'Orate', level: Skill.descriptions[3]}));
+        character.body = 3;
+        character.mind = 4;
+        character.soul = 5;
+        character.skills.push(Skill.factory({name: 'Orate', level: 3}));
         break;
     case 3: // spiritual dunce
-        character.body = Character.descriptions[4];
-        character.mind = Character.descriptions[3];
-        character.spirit = Character.descriptions[5];
-        character.skills.push(Skill.factory({name: 'Religion', level: Skill.descriptions[3]}));
+        character.body = 4;
+        character.mind = 3;
+        character.soul = 5;
+        character.skills.push(Skill.factory({name: 'Religion', level: 3}));
         break;
     case 4: // balance
-        character.body = Character.descriptions[4];
-        character.mind = Character.descriptions[4];
-        character.spirit = Character.descriptions[4];
-        character.skills.push(Skill.factory({name: 'Religion', level: Skill.descriptions[3]}));
+        character.body = 4;
+        character.mind = 4;
+        character.soul = 4;
+        character.skills.push(Skill.factory({name: 'Religion', level: 3}));
         break;
     }
 };
@@ -65,45 +66,49 @@ var generateStats = function (character) {
 CharacterSchema.statics.factory = function (template, firstKnight) {
     "use strict";
     var result = new Character(template);
-    if (!template.mind || !template.body || !template.spirit) {
+    if (!template.mind || !template.body || !template.soul) {
         generateStats(result);
     }
 
     if (firstKnight) {
-        result.fatherHistory();
+        result.queuedEvents.push(result.fatherHistory());
     }
 
     switch (result.profession) {
     case 'Knight':
         if (!template.age) {result.age = 21; }
-        result.spirit = Character.descriptions[Character.descriptions.indexOf(result.spirit) - 1];
-        result.body = Character.descriptions[Character.descriptions.indexOf(result.body) + 1];
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: Skill.descriptions[3]}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: Skill.descriptions[3]}));
-        result.skills.push(Skill.factory({name: 'Spear', level: Skill.descriptions[3]}));
+        result.soul -= 1;
+        result.body += 1;
+        result.honor = 5;
+        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 3}));
+        result.skills.push(Skill.factory({name: 'Horsemanship', level: 3}));
+        result.skills.push(Skill.factory({name: 'Spear', level: 3}));
         result.armor = 'Chain Hauberk';
         result.shield = true;
         break;
     case 'Lady':
         if (!template.age) {result.age = 16; }
-        result.spirit = Character.descriptions[Character.descriptions.indexOf(result.spirit) + 1];
-        result.body = Character.descriptions[Character.descriptions.indexOf(result.body) - 1];
-        result.skills.push(Skill.factory({name: 'Steward', level: Skill.descriptions[3]}));
+        result.soul += 1;
+        result.body -= 1;
+        result.honor = 4;
+        result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
         break;
     case 'Squire':
+        // will add to body, skills and honor when they reach 21
         if (!template.age) {result.age = 16; }
-        result.spirit = Character.descriptions[Character.descriptions.indexOf(result.spirit) - 1];
-        // will add to body when they reach 21
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: Skill.descriptions[1]}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: Skill.descriptions[1]}));
-        result.skills.push(Skill.factory({name: 'Spear', level: Skill.descriptions[1]}));
+        result.soul -= 1;
+        result.honor = 4;
+        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 1}));
+        result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
+        result.skills.push(Skill.factory({name: 'Spear', level: 1}));
         break;
     case 'Steward':
         if (!template.age) {result.age = 21; }
-        result.skills.push(Skill.factory({name: 'Steward', level: Skill.descriptions[3]}));
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: Skill.descriptions[1]}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: Skill.descriptions[1]}));
-        result.skills.push(Skill.factory({name: 'Spear', level: Skill.descriptions[1]}));
+        result.honor = 4;
+        result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
+        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 1}));
+        result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
+        result.skills.push(Skill.factory({name: 'Spear', level: 1}));
         break;
     default:
         throw 'Invalid Character profession setting';
@@ -114,10 +119,15 @@ CharacterSchema.statics.factory = function (template, firstKnight) {
     return result;
 };
 
-CharacterSchema.statics.descriptions = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'];
-
 CharacterSchema.methods.fatherHistory = function () {
     "use strict";
+    return new TimelineEvent({
+        year: 490,
+        quarter: 'Winter',
+        title: 'Tragedy!',
+        message: "Your father died.",
+        results: [{label: 'Done', action: 'log'}]
+    });
 };
 
 CharacterSchema.methods.satisfies = function (requirements) {
@@ -129,10 +139,12 @@ CharacterSchema.methods.getEvents = function (turn, result) {
     "use strict";
     if (!result) {result = []; }
 
-    var qe = this.queuedEvents[turn.year];
-    if (qe && qe.length > 0) {
-        qe.forEach(function (e, i, a) {
-            if (e.quarter === turn.quarter && this.satisfies(e.requirements)) {
+    var character = this;
+    if (this.queuedEvents && this.queuedEvents.length > 0) {
+        this.queuedEvents.forEach(function (e, i, a) {
+            if ((!e.year || e.year === turn.year)
+                    && (!e.quarter || e.quarter === turn.quarter)
+                    && character.satisfies(e.requirements)) {
                 result.push(e);
                 a.splice(i, 1);
             }

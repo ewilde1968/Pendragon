@@ -46,16 +46,6 @@ app.post('/user/:userid/game/:gameid', user.ensureSignedIn, game.update);
 app.database = new Database('pendragon');
 app.database.initialize();
 
-var server = http.createServer(app);
-var io = require('socket.io').listen(server);
-server.listen(app.get('port'), function () {
-    "use strict";
+http.createServer(app).listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
-});
-
-io.sockets.on('connection', function (socket) {
-    console.log('Socket.IO connected');
-    
-    socket.on('member', game.getMember);
-    socket.on('locale', game.getLocale);
 });

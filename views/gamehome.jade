@@ -2,6 +2,16 @@ extends layout
 
 block content
   - var turnOnMenu = game && game.families[0];
+  - var skillDescriptionsA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'];
+  - var statDescriptionsA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'];
+  - var honorDescriptionsA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
+
+  if turnOnMenu
+    script.
+      var experienceA = [],
+          skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
+          statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
+          honorDescA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
 
   #sidebar
     if turnOnMenu
@@ -35,15 +45,14 @@ block content
   formUrl = '/user/' + accountId + '/game/' + gameId
   form#content( action=formUrl, method="POST")
     if turnOnMenu
-      script.
-        var socket = io.connect('http://10.0.1.9');
-        //var socket = io.connect('http://localhost');
       #resources
         p calculating...
         #resourcesProgress
           div
         p#remainingResources calculating...
-      fieldset#expendituresPage
+      .notShown
+        input#experience(type='text', name='experience', value='')
+      #expendituresPage
         label(for='livingStyle') Living Style
         select(name='livingStyle', id='livingStyle')
           option(value='Poor') Poor
@@ -55,20 +64,20 @@ block content
           input(type='range', name='clothing', max=6, value=0)
           p 0£
         #holdings.horizontalList
-          each locale in game.families[0].holdings
+          each holding in game.families[0].holdings
             .holdingSummary
-              button.localeDetailButton(data-id='#{locale.id}', data-income='#{locale.income}', data-cost='#{locale.cost}')
-                p #{locale.name}
-                p.localeIncome Income: #{locale.income}£
-                p.localeCost Cost: #{locale.cost}£
-      fieldset#charactersPage(class='notShown')
+              button.holdingDetailButton(data-id='#{holding.id}', data-income='#{holding.income}', data-cost='#{holding.cost}')
+                p.holdingName #{holding.name}
+                p.holdingIncome Income: #{holding.income}£
+                p.holdingCost Cost: #{holding.cost}£
+      #charactersPage(class='notShown')
         #characters
           each member in game.families[0].members
             button.memberDetailButton(data-id='#{member.id}')
               p #{member.name}
               p #{member.profession}
-      fieldset#mapPage(class='notShown')
-      fieldset#courtPage(class='notShown')
+      #mapPage(class='notShown')
+      #courtPage(class='notShown')
         if game.turn.quarter == 'Winter'
           p No Winter Court
         if game.turn.quarter == 'Spring'
@@ -77,33 +86,79 @@ block content
           p No Summer Court
         if game.turn.quarter == 'Fall'
           p Christmas Court
-      fieldset#historyPage(class='notShown')
-      fieldset#memberDetailPage(class='notShown')
-        p#memberName
-        p#memberProfession
-        p#memberAge
-        p#health
-        p#body
-        p#mind
-        p#spirit
-        #skills
-        p#armor
-        p#shield
-      fieldset#localeDetailPage(class='notShown')
-        p#localeName
-        p#localeIncome
-        p#localeCost
-        p#steward
-      each ev in events
-        fieldset(class='notShown eventDetailPage', id='#{ev.id}')
-          p #{ev.message}
-          button.eventDetailDone Done
-    fieldset#settingsPage(class='notShown')
+      #historyPage(class='notShown')
+      each member in game.families[0].members
+        .memberDetailPage(class='notShown', id='#{member.id}', name='#{member.id}')
+          p.memberName #{member.name}
+          p.memberProfession #{member.profession}
+          p.memberAge #{member.age} years old
+          .health
+            span.statLabel Health: 
+            span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
+          .body
+            span.statLabel Body: 
+            span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
+          .mind
+            span.statLabel Mind: 
+            span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
+          .soul
+            span.statLabel Soul: 
+            span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
+          .honor
+            span.statLabel Honor: 
+            span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
+          .skills
+            each skill in member.skills
+              .skill
+                p #{skill.name}: #{skillDescriptionsA[skill.level]}
+          if member.armor && member.armor.length > 0
+            if member.shield
+              p.armor #{member.armor} and Shield
+            else
+              p.armor #{member.armor}
+      each holding in game.families[0].holdings
+        .holdingDetailPage(class='notShown', id='#{holding.id}')
+          p.holdingName #{holding.name}
+          .income
+            span.statLabel Income: £
+            span.statValue #{holding.income}
+          .cost
+            span.statLabel Cost: £
+            span.statValue #{holding.cost}
+          .holdingSteward
+            p Steward
+            button.memberDetailButton(data-id='#{holding.steward}')
+              each member in game.families[0].members
+                if member.id == holding.steward
+                  p #{member.name}
+                  - var foundStewardSkill = null;
+                  each skill in member.skills
+                    if skill.name === 'Stewardry'
+                      - foundStewardSkill = skill;
+                  if foundStewardSkill
+                    p Stewardry: #{skillDescriptionsA[foundStewardSkill.level]}
+                  else
+                    p Stewardry: Untrained
+    #settingsPage(class='notShown')
       a(href='/') Logout
       newGameURL = '/user/' + accountId + '/game/new'
       a(href=newGameURL) New Game
       .multilist
         ul.listgroup
+  if events
+    each ev in events.shown
+      .eventDetailPage(class='notShown', id='#{ev.id}')
+        p #{ev.title}
+        p #{ev.message}
+        each o in ev.results
+          if o.action
+            button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
+    each ev in events.subEvents
+      .subEventDetailPage(class='notShown', id='#{ev.id}')
+        p #{ev.title}
+        p #{ev.message}
+        each o in ev.results
+          button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
 
   if turnOnMenu
     script.
@@ -145,12 +200,12 @@ block content
                 spent += 4;
                 break;
             }
-            $('.localeDetailButton').each(function () {spent+=$(this).data('cost'); });
+            $('.holdingDetailButton').each(function () {spent+=$(this).data('cost'); });
             return spent;
         };
         var calculateIncome = function () {
             var result = #{game.families[0].cash};
-            $('.localeDetailButton').each( function () {result+=$(this).data('income'); });
+            $('.holdingDetailButton').each( function () {result+=$(this).data('income'); });
             $('#resources p').text('Resources ' + result + '£');
             $('#clothing input').attr('max', result);
             return result;
@@ -172,16 +227,9 @@ block content
         calculateResources();
 
         //expendituresPage
-        $('.localeDetailButton').click(function (ev) {
+        $('.holdingDetailButton').click(function (ev) {
             ev.preventDefault();
-            socket.emit('locale', '#{gameId}', $(this).data('id'), function (data, steward) {
-                $('#localeName').text(data.name);
-                $('#localeIncome').text('Income: ' + data.income + '£');
-                $('#localeCost').text('Cost: ' + data.cost + '£');
-                if (steward)
-                    $('#steward').text('Steward: ' + steward.name);
-                showPage('#localeDetailPage');
-            });
+            showPage( '#' + $(this).data('id'));
         });
         $('#clothing input').change(function () {
             $('#clothing p').text($(this).val() + '£');
@@ -196,27 +244,7 @@ block content
         //charactersPage
         $('.memberDetailButton').click(function (ev) {
             ev.preventDefault();
-            socket.emit('member', '#{gameId}', $(this).data('id'), function (data) {
-                $('#memberName').text(data.name);
-                $('#memberProfession').text(data.profession);
-                $('#memberAge').text('Age: ' + data.age);
-                $('#health').text('Health: ' + data.health);
-                $('#body').text('Body: ' + data.body);
-                $('#mind').text('Mind: ' + data.mind);
-                $('#spirit').text('Spirit: ' + data.spirit);
-                $('#skills').empty();
-                data.skills.forEach(function (s) {
-                    $('#skills').append($('<p></p>').text(s.name + ': ' + s.level));
-                });
-                if (data.armor && data.armor.length > 0) {
-                    $('#armor').text(data.armor + (data.shield ? ' and Shield' : ''));
-                } else if (data.shield) {
-                    $('#armor').text('Shield');
-                } else {
-                    $('#armor').empty();
-                }
-                showPage('#memberDetailPage');
-            });
+            showPage( '#' + $(this).data('id'));
         });
         
         //mapPage
@@ -225,20 +253,58 @@ block content
         //settingsPage
 
         //eventDetailPage
+        var eventShown = null;
+        var showEvent = function (eventToShow) {
+            if (eventShown != eventToShow) {
+                if( eventShown)
+                    $(eventShown).addClass('notShown');
+                eventShown = eventToShow;
+                if( eventShown)
+                    $(eventShown).removeClass('notShown');
+            }
+        };          
         var nextEvent = function () {
             var evs = $('.eventDetailPage');
             if (evs && evs.length > 0) {
-                showPage('#' + evs[0].id);
+                showEvent('#' + evs[0].id);
                 $('#sidebar button').attr('disabled', true);
             } else {
-                showPage('#expendituresPage');
+                showEvent(null);
                 $('#sidebar button').removeAttr('disabled');
             }
         };
-        $('.eventDetailDone').click(function (ev) {
+        $('.eventDetailOption').click(function (ev) {
             ev.preventDefault();
             $(this).parent().remove();
-            nextEvent();
+            switch ($(this).data('action')) {
+            case 'next':
+                showEvent('#' + $(this).data('value'));
+                break;
+            case 'experience':
+                experienceA.push( $(this).data('key'));
+                nextEvent();
+                break;
+            case 'statChange':
+                var key = $(this).data('key'),
+                    spanE = $('#' + '#{game.families[0].members[0].id} .' + key + ' .statValue'),
+                    val = spanE.data('value');
+                val += $(this).data('value');
+                if (val < 0) {val = 0; }
+                if (key === 'honor') {
+                    if (val >= #{honorDescriptionsA.length}) {val = #{honorDescriptionsA.length} - 1; }
+                    spanE.text(honorDescA[val]);
+                } else {
+                    if (val >= #{statDescriptionsA.length}) {val = #{statDescriptionsA.length} - 1; }
+                    spanE.text(statDescA[val]);
+                }
+                spanE.data('value', val);
+                nextEvent();
+                break;
+            case 'log':
+            default:
+                nextEvent();
+                break;
+            }
         });
         nextEvent();
       });

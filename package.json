@@ -9,6 +9,5 @@
     "express": "3.2.4",
     "mongoose": "*",
     "jade": "*",
-    "socket.io": "*"
   }
 }

@@ -83,19 +83,20 @@ FamilySchema.methods.getEvents = function (turn, result) {
     "use strict";
     if (!result) {result = []; }
 
-    var qe = this.queuedEvents[turn.year];
+    this.members.forEach(function (m) {
+        m.getEvents(turn, result);
+    });
+
+    var qe = this.queuedEvents;
     if (qe && qe.length > 0) {
         qe.forEach(function (e, i, a) {
-            if (e.quarter === turn.quarter && this.satisfies(e.requirements)) {
+            if (e.year === turn.year && e.quarter === turn.quarter
+                    && this.satisfies(e.requirements)) {
                 result.push(e);
                 a.splice(i, 1);
             }
         });
     }
-
-    this.members.forEach(function (m) {
-        m.getEvents(turn, result);
-    });
 };
 
 var Family = mongoose.model('Family', FamilySchema);
