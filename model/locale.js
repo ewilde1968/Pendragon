@@ -37,5 +37,9 @@ LocaleSchema.methods.addSteward = function (s) {
     }
 };
 
+LocaleSchema.methods.mergeOptions = function (options) {
+    "use strict";
+};
+
 var Locale = mongoose.model('Locale', LocaleSchema);
 module.exports = Locale;

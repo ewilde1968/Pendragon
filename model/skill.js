@@ -9,14 +9,16 @@ var mongoose = require('mongoose'),
 
 var SkillSchema = new Schema({
     name:           { type: String, required: true },
-    level:          Number
+    level:          Number,
+    experience:     Boolean
 });
 
 
 SkillSchema.statics.factory = function (template) {
     "use strict";
     var result = new Skill({name: template.name,
-                            level: template.level || 0
+                            level: template.level || 0,
+                            experience: template.experience || false
                            });
     
     return result;

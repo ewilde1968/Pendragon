@@ -53,6 +53,19 @@ FamilySchema.methods.generateSpecialty = function () {
 
 FamilySchema.methods.mergeOptions = function (options) {
     "use strict";
+    if (options && options.changes) {
+        this.members.forEach(function (m) {
+            if (options.changes[m.id]) {
+                m.mergeOptions(options.changes[m.id]);
+            }
+        });
+
+        this.holdings.forEach(function (h) {
+            if (options.changes[h.id]) {
+                h.mergeOptions(options.changes[h.id]);
+            }
+        });
+    }
 };
 
 FamilySchema.methods.endQuarter = function () {

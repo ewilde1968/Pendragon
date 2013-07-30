@@ -152,6 +152,31 @@ CharacterSchema.methods.getEvents = function (turn, result) {
     }
 };
 
+CharacterSchema.methods.mergeOptions = function (options) {
+    "use strict";
+    for (var prop in options) {
+        switch (prop) {
+        case 'experience':
+            this.skills.forEach(function (s) {
+                if (options.experience.indexOf(s.name) != -1) {s.experience = true; }
+            });
+            break;
+        case 'name':
+        case 'age':
+        case 'profession':
+        case 'health':
+        case 'body':
+        case 'mind':
+        case 'spirit':
+        case 'honor':
+            this[prop] = options[prop];
+            break;
+        default:
+            break;
+        }
+    }
+};
+
 
 var Character = mongoose.model('Character', CharacterSchema);
 module.exports = Character;
