@@ -66,7 +66,7 @@ block content
         #holdings.horizontalList
           each holding in game.families[0].holdings
             .holdingSummary
-              button.holdingDetailButton(data-id='#{holding.id}', data-income='#{holding.income}', data-cost='#{holding.cost}')
+              button.holdingDetailButton(data-id='#{holding.id}', class='#{holding.id}')
                 p.holdingName #{holding.name}
                 p.holdingIncome Income: #{holding.income}£
                 p.holdingCost Cost: #{holding.cost}£
@@ -111,20 +111,16 @@ block content
             each skill in member.skills
               .skill
                 p #{skill.name}: #{skillDescriptionsA[skill.level]}
-          if member.armor && member.armor.length > 0
-            if member.shield
-              p.armor #{member.armor} and Shield
-            else
-              p.armor #{member.armor}
+          .equipment
+            if member.armor && member.armor.length > 0
+              if member.shield
+                p.armor #{member.armor} and Shield
+              else
+                p.armor #{member.armor}
+            button Equip
       each holding in game.families[0].holdings
-        .holdingDetailPage(class='notShown', id='#{holding.id}')
+        .holdingDetailPage(class='notShown', id='#{holding.id}', data-income='#{holding.income}', data-cost='#{holding.cost}')
           p.holdingName #{holding.name}
-          .income
-            span.statLabel Income: £
-            span.statValue #{holding.income}
-          .cost
-            span.statLabel Cost: £
-            span.statValue #{holding.cost}
           .holdingSteward
             p Steward
             button.memberDetailButton(data-id='#{holding.steward}')
@@ -139,6 +135,35 @@ block content
                     p Stewardry: #{skillDescriptionsA[foundStewardSkill.level]}
                   else
                     p Stewardry: Untrained
+            button.changeSteward Change Steward
+          .investments
+            - var sum = 0, costSum = holding.cost;
+            each investment in holding.investments
+              - var c = investment.built ? 'built' : 'notbuilt' + investment.damaged ? 'damaged' : '';
+              - sum += investment.income;
+              - costSum += investment.cost;
+              p(class=c) #{investment.name}
+            p.investmentIncome(data-sum='#{sum}') Investment Income: #{sum}£
+            button.makeInvestment Make Investment
+          p.holdingCost(data-sum='#{costSum}') Cost to run estate: #{costSum}
+          .taxLevel
+            label(for='taxLevel') Taxes
+            input(type='range', name='taxLevel', max=12, value=6)
+            p 6£
+          .population
+            p.noncombatants Noncombatants #{holding.population.noncombatants}
+            p.militia Militia #{holding.population.militia}
+            if holding.population.archers
+              p.archers Archers #{holding.population.archers}
+            if holding.population.karls
+              p.karls Karls #{holding.population.karls}
+            button.trainPopulation Train
+          .festival
+            select(name='festival', id='festival')
+              option(value='Fair') Fair
+              option(value='Horse Race') Horse Race
+              option(value='Tournament') Tournament
+            button.holdFestival Hold Festival
     #settingsPage(class='notShown')
       a(href='/') Logout
       newGameURL = '/user/' + accountId + '/game/new'
@@ -201,12 +226,12 @@ block content
                 spent += 4;
                 break;
             }
-            $('.holdingDetailButton').each(function () {spent+=$(this).data('cost'); });
+            $('.holdingDetailPage').each(function () {spent+=$(this).data('cost'); });
             return spent;
         };
         var calculateIncome = function () {
             var result = #{game.families[0].cash};
-            $('.holdingDetailButton').each( function () {result+=$(this).data('income'); });
+            $('.holdingDetailPage').each( function () {result+=$(this).data('income'); });
             $('#resources p').text('Resources ' + result + '£');
             $('#clothing input').attr('max', result);
             return result;
@@ -222,7 +247,8 @@ block content
                 progress.removeClass('inDebt');
                 $('#remainingResources').text((have - spent) + '£');
             }
-            var val = (have - spent) * 100 / have;
+            var val = Math.floor(Math.abs(have - spent) * 100 / 12);
+            if (val > 100) val = 100;
             progress.css('width', Math.floor(Math.abs(val)) + '%');
         };
         calculateResources();
@@ -246,6 +272,9 @@ block content
         $('.memberDetailButton').click(function (ev) {
             ev.preventDefault();
             showPage( '#' + $(this).data('id'));
+        });
+        $('.equipment button').click(function (ev) {
+            ev.preventDefault();
         });
         
         //mapPage
@@ -316,6 +345,34 @@ block content
             }
         });
         nextEvent();
+        
+        // holdingDetailPage
+        $('.changeSteward').click(function (ev) {
+            ev.preventDefault();
+        });
+        $('.makeInvestment').click(function (ev) {
+            ev.preventDefault();
+        });
+        $('.trainPopulation').click(function (ev) {
+            ev.preventDefault();
+        });
+        $('.holdFestival').click(function (ev) {
+            ev.preventDefault();
+        });
+        $('.taxLevel input').change(function (ev) {
+            var pg = $(this).parent().parent(),
+                id = pg.attr('id'),
+                ii = parseInt($('#' + id + ' .investmentIncome').data('sum'), 10),
+                val = parseInt($(this).val(), 10),
+                total = val + ii,
+                hObj = changesObj[id] || new Object();
+            $('.taxLevel p').text(val + '£');
+            $('.' + id + ' .holdingIncome').text( 'Income: ' + total + '£');
+            pg.data('income',total);
+            hObj.tax = val;
+            changesObj[id] = hObj;
+            calculateResources();
+        });
       });
   else
     script.
