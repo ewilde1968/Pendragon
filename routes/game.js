@@ -63,6 +63,10 @@ exports.update = function (req, res, next) {
     "use strict";
     Game.findById(req.params.gameid, function (err, game) {
         if (err) {return err; }
+        
+        if (req.body && req.body.changes)
+            req.body.changes = JSON.parse(req.body.changes);
+
         game.mergeOptions(req.body);
         game.nextTurn(function (err, game) {
             if (err) {return err; }

@@ -8,7 +8,7 @@ block content
 
   if turnOnMenu
     script.
-      var experienceA = [],
+      var changesObj = new Object(),
           skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
           statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
           honorDescA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
@@ -51,7 +51,7 @@ block content
           div
         p#remainingResources calculating...
       .notShown
-        input#experience(type='text', name='experience', value='')
+        input#changes(type='text', name='changes', value='')
       #expendituresPage
         label(for='livingStyle') Living Style
         select(name='livingStyle', id='livingStyle')
@@ -179,6 +179,7 @@ block content
         $('#historyMenu').click(function () {showPage('#historyPage'); });
         $('#settingsMenu').click(function () {showPage('#settingsPage'); });
         $('#turnCounter button').click(function () {
+            $('#changes').val( JSON.stringify(changesObj));
             $('#content').submit();
         });
 
@@ -281,13 +282,19 @@ block content
                 showEvent('#' + $(this).data('value'));
                 break;
             case 'experience':
-                experienceA.push( $(this).data('key'));
+                var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
+                    expObj = cObj['experience'] || new Array(),
+                    key = $(this).data('key');
+                if (expObj.indexOf(key) == -1) {expObj.push(key); }
+                cObj['experience'] = expObj;
+                changesObj['#{game.families[0].members[0].id}'] = cObj;
                 nextEvent();
                 break;
             case 'statChange':
                 var key = $(this).data('key'),
                     spanE = $('#' + '#{game.families[0].members[0].id} .' + key + ' .statValue'),
-                    val = spanE.data('value');
+                    val = spanE.data('value'),
+                    cObj = changesObj['#{game.families[0].members[0].id}'] || new Object();
                 val += $(this).data('value');
                 if (val < 0) {val = 0; }
                 if (key === 'honor') {
@@ -298,6 +305,8 @@ block content
                     spanE.text(statDescA[val]);
                 }
                 spanE.data('value', val);
+                cObj[key] = val;
+                changesObj['#{game.families[0].members[0].id}'] = cObj;
                 nextEvent();
                 break;
             case 'log':
