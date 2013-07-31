@@ -42,15 +42,15 @@ block content
           button#settingsMenu
             p Settings
 
-  formUrl = '/user/' + accountId + '/game/' + gameId
-  form#content( action=formUrl, method="POST")
+  #content
     if turnOnMenu
       #resources
         p calculating...
         #resourcesProgress
           div
         p#remainingResources calculating...
-      .notShown
+      formUrl = '/user/' + accountId + '/game/' + gameId
+      form.notShown( action=formUrl, method="POST")
         input#changes(type='text', name='changes', value='')
       #expendituresPage
         label(for='livingStyle') Living Style
@@ -59,9 +59,9 @@ block content
           option(value='Normal', selected='true') Normal
           option(value='Rich') Rich
           option(value='Opulent') Opulent
-        #clothing
-          label(for='clothing') Clothing and Accoutrements
-          input(type='range', name='clothing', max=6, value=0)
+        #generosity
+          label(for='generosity') Generosity
+          input(type='range', name='generosity', max='#{game.families[0].cash', value='0')
           p 0£
         #holdings.horizontalList
           each holding in game.families[0].holdings
@@ -119,51 +119,72 @@ block content
                 p.armor #{member.armor}
             button Equip
       each holding in game.families[0].holdings
-        .holdingDetailPage(class='notShown', id='#{holding.id}', data-income='#{holding.income}', data-cost='#{holding.cost}')
-          p.holdingName #{holding.name}
-          .holdingSteward
-            p Steward
-            button.memberDetailButton(data-id='#{holding.steward}')
-              each member in game.families[0].members
-                if member.id == holding.steward
-                  p #{member.name}
-                  - var foundStewardSkill = null;
-                  each skill in member.skills
-                    if skill.name === 'Stewardry'
-                      - foundStewardSkill = skill;
-                  if foundStewardSkill
-                    p Stewardry: #{skillDescriptionsA[foundStewardSkill.level]}
-                  else
-                    p Stewardry: Untrained
-            button.changeSteward Change Steward
-          .investments
-            - var sum = 0, costSum = holding.cost;
-            each investment in holding.investments
-              - var c = investment.built ? 'built' : 'notbuilt' + investment.damaged ? 'damaged' : '';
-              - sum += investment.income;
-              - costSum += investment.cost;
-              p(class=c) #{investment.name}
-            p.investmentIncome(data-sum='#{sum}') Investment Income: #{sum}£
-            button.makeInvestment Make Investment
-          p.holdingCost(data-sum='#{costSum}') Cost to run estate: #{costSum}
-          .taxLevel
-            label(for='taxLevel') Taxes
-            input(type='range', name='taxLevel', max=12, value=6)
-            p 6£
-          .population
-            p.noncombatants Noncombatants #{holding.population.noncombatants}
-            p.militia Militia #{holding.population.militia}
-            if holding.population.archers
-              p.archers Archers #{holding.population.archers}
-            if holding.population.karls
-              p.karls Karls #{holding.population.karls}
-            button.trainPopulation Train
-          .festival
-            select(name='festival', id='festival')
-              option(value='Fair') Fair
-              option(value='Horse Race') Horse Race
-              option(value='Tournament') Tournament
-            button.holdFestival Hold Festival
+        .holdingDetailPage(class='notShown', id='#{holding.id}', data-income='#{holding.income}')
+          .statsView
+            p.holdingName #{holding.name}
+            .holdingSteward
+              p Steward
+              button.memberDetailButton(data-id='#{holding.steward}')
+                each member in game.families[0].members
+                  if member.id == holding.steward
+                    p #{member.name}
+                    - var foundStewardSkill = null;
+                    each skill in member.skills
+                      if skill.name === 'Stewardry'
+                        - foundStewardSkill = skill;
+                    if foundStewardSkill
+                      p Stewardry: #{skillDescriptionsA[foundStewardSkill.level]}
+                    else
+                      p Stewardry: Untrained
+              button.changeSteward Change Steward
+            .investments
+              - var sum = 0, costSum = holding.cost;
+              each investment in holding.investments
+                - var c = investment.built ? 'built' : 'notbuilt' + investment.damaged ? 'damaged' : '';
+                - sum += investment.income;
+                - costSum += investment.maintenance;
+                p(class=c) #{investment.name}
+              p.investmentIncome(data-sum='#{sum}') Investment Income: #{sum}£
+              button.makeInvestment Make Investment
+            p.holdingCost(data-sum='#{costSum}') Cost to run estate: #{costSum}£
+            .taxLevel
+              label(for='taxLevel') Taxes
+              input(type='range', name='taxLevel', max=12, value=6)
+              p 6£
+            .population
+              p.noncombatants Noncombatants #{holding.population.noncombatants}
+              p.militia Militia #{holding.population.militia}
+              if holding.population.archers
+                p.archers Archers #{holding.population.archers}
+              if holding.population.karls
+                p.karls Karls #{holding.population.karls}
+              button.trainPopulation Train
+            .festival
+              button.holdFestival Hold Festival
+          .buildView(class='notShown')
+            each investment in holding.allowedInvests
+              input(type='radio', name='#{holding.name}build', value='#{investment.name}', data-cost='#{investment.cost}')
+              label(for='#{holding.name}build') #{investment.name}
+            button.cancel Don't Build
+            button.build Build
+          .trainView(class='notShown')
+            p How much do you spend training?
+            - var militiaTrainMax = (holding.population.noncombatants/5 - holding.population.militia - holding.population.archers) > 0 ? 2 : 0;
+            - var archerTrainMax = Math.floor(holding.population.militia / 3);
+            - var karlTrainMax = Math.floor(holding.population.noncombatants / 50) - holding.population.karls;
+            .militiaTraining
+              label(for='#{holding.id}trainMilitia') Militia (#{holding.population.militia})
+              input(type='range', name='#{holding.id}trainMilitia', value='0', max='#{militiaTrainMax}', data-cost='0')
+              p(id='#{holding.id}trainMilitia') 0£
+            .archerTraining
+              label(for='#{holding.id}trainArchers') Archers (#{holding.population.archers})
+              input(type='range', name='#{holding.id}trainArchers', value='0', max='#{archerTrainMax}', data-cost='0')
+              p(id='#{holding.id}trainArchers') 0£
+            .karlTraining
+              label(for='#{holding.id}trainKarls') Karls (#{holding.population.karls})
+              input(type='range', name='#{holding.id}trainKarls', value='0', max='#{karlTrainMax}', data-cost='0')
+              p(id='#{holding.id}trainKarls') 0£
+            button OK
     #settingsPage(class='notShown')
       a(href='/') Logout
       newGameURL = '/user/' + accountId + '/game/new'
@@ -188,7 +209,9 @@ block content
   if turnOnMenu
     script.
       $(document).ready(function () {
+        // *******************************************
         // menu
+        // *******************************************
         var pageShown = '#expendituresPage';
         var showPage = function (pageToShow) {
             if (pageShown != pageToShow) {
@@ -197,20 +220,26 @@ block content
                 $(pageShown).removeClass('notShown');
             }
         };
+        
         $('#expendituresMenu').click(function () {showPage('#expendituresPage'); });
         $('#charactersMenu').click(function () {showPage('#charactersPage'); });
         $('#mapMenu').click(function () {showPage('#mapPage'); });
         $('#courtMenu').click(function () {showPage('#courtPage'); });
         $('#historyMenu').click(function () {showPage('#historyPage'); });
         $('#settingsMenu').click(function () {showPage('#settingsPage'); });
+
         $('#turnCounter button').click(function () {
             $('#changes').val( JSON.stringify(changesObj));
-            $('#content').submit();
+            $('form').submit();
         });
 
-        //resources area
+
+        // *******************************************
+        // resources area
+        // *******************************************
         var calculateSpent = function () {
-            var spent = parseInt($('#clothing input').val(), 10);
+            var spent = parseInt($('#generosity input').val(), 10);
+
             switch ($('#livingStyle').val()) {
             case 'Poor':
                 spent += 1;
@@ -226,20 +255,25 @@ block content
                 spent += 4;
                 break;
             }
-            $('.holdingDetailPage').each(function () {spent+=$(this).data('cost'); });
+
+            $('.holdingDetailPage .holdingCost').each(function () {spent+=$(this).data('sum'); });
+
             return spent;
         };
+
         var calculateIncome = function () {
             var result = #{game.families[0].cash};
             $('.holdingDetailPage').each( function () {result+=$(this).data('income'); });
             $('#resources p').text('Resources ' + result + '£');
-            $('#clothing input').attr('max', result);
+            $('#generosity input').attr('max', result);
             return result;
         };
+
         var calculateResources = function () {
             var spent = calculateSpent(),
                 have = calculateIncome(),
                 progress = $('#resourcesProgress div');
+
             if (spent > have) {
                 progress.addClass('inDebt');
                 $('#remainingResources').text('-' + (spent - have) + '£');
@@ -247,32 +281,45 @@ block content
                 progress.removeClass('inDebt');
                 $('#remainingResources').text((have - spent) + '£');
             }
+
             var val = Math.floor(Math.abs(have - spent) * 100 / 12);
             if (val > 100) val = 100;
             progress.css('width', Math.floor(Math.abs(val)) + '%');
         };
-        calculateResources();
 
-        //expendituresPage
+
+        // *******************************************
+        // expendituresPage
+        // *******************************************
         $('.holdingDetailButton').click(function (ev) {
             ev.preventDefault();
             showPage( '#' + $(this).data('id'));
         });
-        $('#clothing input').change(function () {
-            $('#clothing p').text($(this).val() + '£');
+
+        $('#generosity input').change(function () {
+            var val = $(this).val();
+
+            $('#generosity p').text(val + '£');
+            changesObj['generosity'] = val;
+
             calculateResources();
         });
-        $('#livingStyle').change(function () {calculateResources(); });
-        if ('#{game.turn.quarter}' != 'Winter') {
-            $('#livingStyle').attr('disabled', true);
-            $('#clothing input').attr('disabled', true);
-        }
 
-        //charactersPage
+        $('#livingStyle').change(function () {
+            changesObj['livingStyle'] = $('#livingStyle option:selected').val();
+
+            calculateResources();
+        });
+
+
+        // *******************************************
+        // charactersPage
+        // *******************************************
         $('.memberDetailButton').click(function (ev) {
             ev.preventDefault();
             showPage( '#' + $(this).data('id'));
         });
+
         $('.equipment button').click(function (ev) {
             ev.preventDefault();
         });
@@ -282,7 +329,9 @@ block content
         //historyPage
         //settingsPage
 
-        //eventDetailPage
+        // *******************************************
+        // eventDetailPage
+        // *******************************************
         var eventShown = null;
         var showEvent = function (eventToShow) {
             if (eventShown != eventToShow) {
@@ -293,6 +342,7 @@ block content
                     $(eventShown).removeClass('notShown');
             }
         };          
+
         var nextEvent = function () {
             var evs = $('.eventDetailPage');
             if (evs && evs.length > 0) {
@@ -303,9 +353,12 @@ block content
                 $('#sidebar button').removeAttr('disabled');
             }
         };
+
         $('.eventDetailOption').click(function (ev) {
             ev.preventDefault();
+
             $(this).parent().remove();
+
             switch ($(this).data('action')) {
             case 'next':
                 showEvent('#' + $(this).data('value'));
@@ -314,9 +367,12 @@ block content
                 var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
                     expObj = cObj['experience'] || new Array(),
                     key = $(this).data('key');
+
                 if (expObj.indexOf(key) == -1) {expObj.push(key); }
+
                 cObj['experience'] = expObj;
                 changesObj['#{game.families[0].members[0].id}'] = cObj;
+
                 nextEvent();
                 break;
             case 'statChange':
@@ -324,8 +380,10 @@ block content
                     spanE = $('#' + '#{game.families[0].members[0].id} .' + key + ' .statValue'),
                     val = spanE.data('value'),
                     cObj = changesObj['#{game.families[0].members[0].id}'] || new Object();
+
                 val += $(this).data('value');
                 if (val < 0) {val = 0; }
+
                 if (key === 'honor') {
                     if (val >= #{honorDescriptionsA.length}) {val = #{honorDescriptionsA.length} - 1; }
                     spanE.text(honorDescA[val]);
@@ -334,8 +392,10 @@ block content
                     spanE.text(statDescA[val]);
                 }
                 spanE.data('value', val);
+
                 cObj[key] = val;
                 changesObj['#{game.families[0].members[0].id}'] = cObj;
+
                 nextEvent();
                 break;
             case 'log':
@@ -344,35 +404,142 @@ block content
                 break;
             }
         });
-        nextEvent();
-        
+
+
+        // *******************************************
         // holdingDetailPage
+        // *******************************************
         $('.changeSteward').click(function (ev) {
             ev.preventDefault();
         });
+
+        var setHoldingView = function(t, toShow) {
+            var pg = t.parent().parent(),
+                id = pg.attr('id');
+
+            $('#' + id + ' .statsView').addClass('notShown');
+            $('#' + id + ' .buildView').addClass('notShown');
+            $('#' + id + ' .trainView').addClass('notShown');
+
+            $('#' + id + ' ' + toShow).removeClass('notShown');
+
+            return id;
+        };
+
+        var setBuildSelection = function(id, make) {
+            var hObj = changesObj[id] || new Object(),
+                ce = $('#' + id + ' .holdingCost'),
+                selItem = $('#' + id + ' input:checked'),
+                cost = ce.data('sum');
+            
+            if (hObj.build) {
+                cost -= hObj.build.cost;
+            }
+
+            if (make) {
+                hObj.build = {cost: selItem.data('cost'), name: selItem.val()};
+                changesObj[id] = hObj;
+                cost += hObj.build.cost;
+            } else {
+                delete hObj.build;
+            }
+
+            ce.data('sum', cost).text('Cost to run estate: ' + cost + '£');
+            $('.' + id + ' .holdingCost').text( 'Cost: ' + cost + '£');
+
+            calculateResources();
+        };
+
         $('.makeInvestment').click(function (ev) {
             ev.preventDefault();
+            setHoldingView($(this).parent(), '.buildView');
         });
+
+        $('.buildView .cancel').click(function (ev) {
+            ev.preventDefault();
+            setBuildSelection(setHoldingView($(this), '.statsView'), false);
+        });
+
+        $('.buildView .build').click(function (ev) {
+            ev.preventDefault();
+            setBuildSelection(setHoldingView($(this), '.statsView'), true);
+        });
+
         $('.trainPopulation').click(function (ev) {
             ev.preventDefault();
+            setHoldingView($(this).parent(), '.trainView')
         });
+
         $('.holdFestival').click(function (ev) {
             ev.preventDefault();
         });
+
         $('.taxLevel input').change(function (ev) {
-            var pg = $(this).parent().parent(),
+            var pg = $(this).parent().parent().parent(),
                 id = pg.attr('id'),
                 ii = parseInt($('#' + id + ' .investmentIncome').data('sum'), 10),
                 val = parseInt($(this).val(), 10),
                 total = val + ii,
                 hObj = changesObj[id] || new Object();
+
             $('.taxLevel p').text(val + '£');
             $('.' + id + ' .holdingIncome').text( 'Income: ' + total + '£');
             pg.data('income',total);
+
             hObj.tax = val;
             changesObj[id] = hObj;
+
             calculateResources();
         });
+
+        $('.trainView input').change(function (ev) {
+            var pg = $(this).parent().parent().parent(),
+                id = pg.attr('id'),
+                hObj = changesObj[id] || new Object(),
+                pm = $('#' + id + 'trainMilitia'),
+                pa = $('#' + id + 'trainArchers'),
+                pk = $('#' + id + 'trainKarls'),
+                im = $('input[name=' + id + 'trainMilitia' + ']'),
+                ia = $('input[name=' + id + 'trainArchers' + ']'),
+                ik = $('input[name=' + id + 'trainKarls' + ']'),
+                ce = $('#' + id + ' .holdingCost'),
+                cost = ce.data('sum');
+            
+            if (hObj.train) {
+                cost = cost - hObj.train.militia - hObj.train.archers - hObj.train.karls;
+            }
+
+            hObj.train = {militia: im.val(), archers: ia.val(), karls: ik.val()};
+            changesObj[id] = hObj;
+            cost += parseInt(hObj.train.militia, 10) + parseInt(hObj.train.archers, 10) + parseInt(hObj.train.karls, 10);
+
+            pm.text(im.val() + '£');
+            pa.text(ia.val() + '£');
+            pk.text(ik.val() + '£');
+            ce.data('sum', cost).text('Cost to run estate: ' + cost + '£');
+            $('.' + id + ' .holdingCost').text( 'Cost: ' + cost + '£');
+
+            calculateResources();
+        });
+        
+        $('.trainView button').click(function (ev) {
+            ev.preventDefault();
+            setHoldingView($(this), '.statsView')
+        });
+
+        // *******************************************
+        // initial setup
+        // *******************************************
+        calculateResources();
+        if ('#{game.turn.quarter}' != 'Winter') {
+            $('#livingStyle').attr('disabled', true);
+            $('#generosity input').attr('disabled', true);
+            $('.makeInvestment').attr('disabled', true);
+            $('.trainPopulation').attr('disabled', true);
+            $('.taxLevel input').attr('disabled', true);
+            $('.changeSteward').attr('disabled', true);
+        }
+        nextEvent();
       });
   else
     script.

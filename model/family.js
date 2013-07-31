@@ -54,6 +54,10 @@ FamilySchema.methods.generateSpecialty = function () {
 FamilySchema.methods.mergeOptions = function (options) {
     "use strict";
     if (options && options.changes) {
+        if (options.changes.generosity || options.changes.livingStyle) {
+            this.members[0].setPersonalExpenses(options.changes);
+        }
+
         this.members.forEach(function (m) {
             if (options.changes[m.id]) {
                 m.mergeOptions(options.changes[m.id]);

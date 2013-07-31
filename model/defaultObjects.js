@@ -48,6 +48,40 @@ var defaultObjects = {
             message: "Summons to King Uther's Court",
             results: [{label: 'Done', action: 'remove'}]
         }
+    ],
+    investments: [
+        {
+            name: 'Manor House',
+            income: 0,
+            cost: 0,
+            maintenance: 0,
+            defense: 0,
+            hate: 0
+        },
+        {
+            name: 'Ditch and Rampart',
+            income: 0,
+            cost: 15,
+            maintenance: 1,
+            defense: 2,
+            hate: 0
+        },
+        {
+            name: 'Mill',
+            income: 0,
+            cost: 15,
+            maintenance: 0,
+            defense: 0,
+            hate: -2
+        },
+        {
+            name: 'Apiary',
+            income: 2,
+            cost: 2,
+            maintenance: 1,
+            defense: 0,
+            hate: 0
+        }
     ]
 };
 

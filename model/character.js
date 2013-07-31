@@ -154,12 +154,14 @@ CharacterSchema.methods.getEvents = function (turn, result) {
 
 CharacterSchema.methods.mergeOptions = function (options) {
     "use strict";
-    for (var prop in options) {
+    var prop,
+        setExperience = function (s) {
+            if (options.experience.indexOf(s.name) !== -1) {s.experience = true; }
+        };
+    for (prop in options) {
         switch (prop) {
         case 'experience':
-            this.skills.forEach(function (s) {
-                if (options.experience.indexOf(s.name) != -1) {s.experience = true; }
-            });
+            this.skills.forEach(setExperience);
             break;
         case 'name':
         case 'age':
@@ -175,6 +177,11 @@ CharacterSchema.methods.mergeOptions = function (options) {
             break;
         }
     }
+};
+
+CharacterSchema.methods.setPersonalExpenses = function (options) {
+    "use strict";
+    // TODO
 };
 
 

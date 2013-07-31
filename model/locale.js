@@ -6,7 +6,8 @@ var Locale, require, module; // forward to clear out JSLint errors
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Investment = require('./investment');
+    Investment = require('./investment'),
+    defaultObjects = require('./defaultObjects');
 
 var LocaleSchema = new Schema({
     name:           { type: String, required: true },
@@ -14,6 +15,7 @@ var LocaleSchema = new Schema({
     cost:           Number,
     steward:        ObjectId,
     investments:    [Investment.schema],
+    allowedInvests: [Investment.schema],
     population:     {noncombatants: Number, militia: Number, archers: Number, karls: Number}
 });
 
@@ -25,14 +27,30 @@ LocaleSchema.statics.factory = function (template) {
                              cost: 1,
                              population: template.population ||
                              {noncombatants: 500,
+                              archers: 0,
                               militia: (Math.floor(Math.random() * 20) + 1) * 5,
                               karls: Math.floor(Math.random() * 6)
                              }
                             });
 
-    result.investments.push(Investment.factory({name: 'Manor House', built: true}));
+    defaultObjects.investments.forEach(function (i) {
+        result.allowedInvests.push(Investment.factory(i));
+    });
+    result.addInvestment('Manor House');
+    result.addInvestment('Mill');
     
     return result;
+};
+
+LocaleSchema.methods.addInvestment = function (invest) {
+    "use strict";
+    var holding = this;
+    this.allowedInvests.forEach(function (inv, i, arr) {
+        if (inv.name === invest) {
+            arr.splice(i, 1);
+            holding.investments.push(inv);
+        }
+    });
 };
 
 LocaleSchema.methods.addSteward = function (s) {
