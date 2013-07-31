@@ -91,33 +91,33 @@ block content
         .memberDetailPage(class='notShown', id='#{member.id}', name='#{member.id}')
           p.memberName #{member.name}
           p.memberProfession #{member.profession}
-          p.memberAge #{member.age} years old
-          .health
-            span.statLabel Health: 
-            span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
-          .body
-            span.statLabel Body: 
-            span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
-          .mind
-            span.statLabel Mind: 
-            span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
-          .soul
-            span.statLabel Soul: 
-            span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
-          .honor
-            span.statLabel Honor: 
-            span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
-          .skills
-            each skill in member.skills
-              .skill
-                p #{skill.name}: #{skillDescriptionsA[skill.level]}
-          .equipment
-            if member.armor && member.armor.length > 0
-              if member.shield
-                p.armor #{member.armor} and Shield
-              else
-                p.armor #{member.armor}
-            button Equip
+          .statsView
+            p.memberAge #{member.age} years old
+            .health
+              span.statLabel Health: 
+              span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
+            .body
+              span.statLabel Body: 
+              span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
+            .mind
+              span.statLabel Mind: 
+              span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
+            .soul
+              span.statLabel Soul: 
+              span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
+            .honor
+              span.statLabel Honor: 
+              span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
+            .skills
+              each skill in member.skills
+                .skill
+                  p #{skill.name}: #{skillDescriptionsA[skill.level]}
+            .equipment
+              if member.armor && member.armor.length > 0
+                if member.shield
+                  p.armor #{member.armor} and Shield
+                else
+                  p.armor #{member.armor}
       each holding in game.families[0].holdings
         .holdingDetailPage(class='notShown', id='#{holding.id}', data-income='#{holding.income}')
           .statsView
@@ -163,8 +163,8 @@ block content
               button.holdFestival Hold Festival
           .buildView(class='notShown')
             each investment in holding.allowedInvests
-              input(type='radio', name='#{holding.name}build', value='#{investment.name}', data-cost='#{investment.cost}')
-              label(for='#{holding.name}build') #{investment.name}
+              input(type='radio', name='#{holding.id}build', value='#{investment.name}', data-cost='#{investment.cost}')
+              label(for='#{holding.id}build') #{investment.name}
             button.cancel Don't Build
             button.build Build
           .trainView(class='notShown')
@@ -185,6 +185,12 @@ block content
               input(type='range', name='#{holding.id}trainKarls', value='0', max='#{karlTrainMax}', data-cost='0')
               p(id='#{holding.id}trainKarls') 0£
             button OK
+          .festivalView(class='notShown')
+            each festival in holding.allowedFeasts
+              input(type='radio', name='#{holding.id}festival', value='#{festival.name}', data-cost='#{festival.cost}')
+              label(for='#{holding.id}festival') #{festival.name}
+            button.cancel Cancel
+            button.festival Festival
     #settingsPage(class='notShown')
       a(href='/') Logout
       newGameURL = '/user/' + accountId + '/game/new'
@@ -330,6 +336,10 @@ block content
         //settingsPage
 
         // *******************************************
+        // characterDetailPage
+        // *******************************************
+
+        // *******************************************
         // eventDetailPage
         // *******************************************
         var eventShown = null;
@@ -420,6 +430,7 @@ block content
             $('#' + id + ' .statsView').addClass('notShown');
             $('#' + id + ' .buildView').addClass('notShown');
             $('#' + id + ' .trainView').addClass('notShown');
+            $('#' + id + ' .festivalView').addClass('notShown');
 
             $('#' + id + ' ' + toShow).removeClass('notShown');
 
@@ -429,7 +440,7 @@ block content
         var setBuildSelection = function(id, make) {
             var hObj = changesObj[id] || new Object(),
                 ce = $('#' + id + ' .holdingCost'),
-                selItem = $('#' + id + ' input:checked'),
+                selItem = $('#' + id + ' .buildView input:checked'),
                 cost = ce.data('sum');
             
             if (hObj.build) {
@@ -442,6 +453,30 @@ block content
                 cost += hObj.build.cost;
             } else {
                 delete hObj.build;
+            }
+
+            ce.data('sum', cost).text('Cost to run estate: ' + cost + '£');
+            $('.' + id + ' .holdingCost').text( 'Cost: ' + cost + '£');
+
+            calculateResources();
+        };
+
+        var setFestivalSelection = function(id, make) {
+            var hObj = changesObj[id] || new Object(),
+                ce = $('#' + id + ' .holdingCost'),
+                selItem = $('#' + id + ' .festivalView input:checked'),
+                cost = ce.data('sum');
+            
+            if (hObj.festival) {
+                cost -= hObj.festival.cost;
+            }
+
+            if (make) {
+                hObj.festival = {cost: selItem.data('cost'), name: selItem.val()};
+                changesObj[id] = hObj;
+                cost += hObj.festival.cost;
+            } else {
+                delete hObj.festival;
             }
 
             ce.data('sum', cost).text('Cost to run estate: ' + cost + '£');
@@ -467,11 +502,27 @@ block content
 
         $('.trainPopulation').click(function (ev) {
             ev.preventDefault();
-            setHoldingView($(this).parent(), '.trainView')
+            setHoldingView($(this).parent(), '.trainView');
+        });
+        
+        $('.trainView button').click(function (ev) {
+            ev.preventDefault();
+            setHoldingView($(this), '.statsView')
         });
 
         $('.holdFestival').click(function (ev) {
             ev.preventDefault();
+            setHoldingView($(this).parent(), '.festivalView');
+        });
+        
+        $('.festivalView .festival').click(function (ev) {
+            ev.preventDefault();
+            setFestivalSelection(setHoldingView($(this), '.statsView'), true);
+        });
+        
+        $('.festivalView .cancel').click(function (ev) {
+            ev.preventDefault();
+            setFestivalSelection(setHoldingView($(this), '.statsView'), false);
         });
 
         $('.taxLevel input').change(function (ev) {
@@ -520,11 +571,6 @@ block content
             $('.' + id + ' .holdingCost').text( 'Cost: ' + cost + '£');
 
             calculateResources();
-        });
-        
-        $('.trainView button').click(function (ev) {
-            ev.preventDefault();
-            setHoldingView($(this), '.statsView')
         });
 
         // *******************************************

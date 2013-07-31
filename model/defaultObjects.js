@@ -82,6 +82,23 @@ var defaultObjects = {
             defense: 0,
             hate: 0
         }
+    ],
+    feasts: [
+        {
+            name: 'Fair',
+            cost: 5,
+            hate: -1
+        },
+        {
+            name: 'Horse Race',
+            cost: 3,
+            hate: 0
+        },
+        {
+            name: 'Tournament',
+            cost: 15,
+            hate: -2
+        }
     ]
 };
 

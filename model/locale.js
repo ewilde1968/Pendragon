@@ -7,6 +7,7 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     Investment = require('./investment'),
+    Feast = require('./feast'),
     defaultObjects = require('./defaultObjects');
 
 var LocaleSchema = new Schema({
@@ -16,6 +17,7 @@ var LocaleSchema = new Schema({
     steward:        ObjectId,
     investments:    [Investment.schema],
     allowedInvests: [Investment.schema],
+    allowedFeasts:  [Feast.schema],
     population:     {noncombatants: Number, militia: Number, archers: Number, karls: Number}
 });
 
@@ -38,7 +40,11 @@ LocaleSchema.statics.factory = function (template) {
     });
     result.addInvestment('Manor House');
     result.addInvestment('Mill');
-    
+
+    defaultObjects.feasts.forEach(function (i) {
+        result.allowedFeasts.push(Feast.factory(i));
+    });
+
     return result;
 };
 
