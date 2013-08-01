@@ -119,7 +119,7 @@ FamilySchema.methods.getEvents = function (turn, result) {
             e = qe[index];
             if ((!e.year || e.year === turn.year)
                     && (!e.quarter || e.quarter === turn.quarter)
-                    && holding.satisfies(e.requirements)) {
+                    && this.satisfies(e.requirements)) {
                 if (!result) {
                     qe.splice(index, 1);
                     index -= 1;

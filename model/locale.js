@@ -127,8 +127,7 @@ LocaleSchema.methods.satisfies = function (requirements) {
 
 LocaleSchema.methods.getEvents = function (turn, result) {
     "use strict";
-    var holding = this,
-        index,
+    var index,
         e;
 
     if (this.queuedEvents && this.queuedEvents.length > 0) {
@@ -136,7 +135,7 @@ LocaleSchema.methods.getEvents = function (turn, result) {
             e = this.queuedEvents[index];
             if ((!e.year || e.year === turn.year)
                     && (!e.quarter || e.quarter === turn.quarter)
-                    && holding.satisfies(e.requirements)) {
+                    && this.satisfies(e.requirements)) {
                 if (!result) {
                     this.queuedEvents.splice(index, 1);
                     index -= 1;

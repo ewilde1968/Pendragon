@@ -137,8 +137,7 @@ CharacterSchema.methods.satisfies = function (requirements) {
 
 CharacterSchema.methods.getEvents = function (turn, result) {
     "use strict";
-    var character = this,
-        index,
+    var index,
         e;
 
     if (this.queuedEvents && this.queuedEvents.length > 0) {
@@ -146,7 +145,7 @@ CharacterSchema.methods.getEvents = function (turn, result) {
             e = this.queuedEvents[index];
             if ((!e.year || e.year === turn.year)
                     && (!e.quarter || e.quarter === turn.quarter)
-                    && character.satisfies(e.requirements)) {
+                    && this.satisfies(e.requirements)) {
                 if (!result) {
                     this.queuedEvents.splice(index, 1);
                     index -= 1;
@@ -165,22 +164,24 @@ CharacterSchema.methods.mergeOptions = function (options) {
             if (options.experience.indexOf(s.name) !== -1) {s.experience = true; }
         };
     for (prop in options) {
-        switch (prop) {
-        case 'experience':
-            this.skills.forEach(setExperience);
-            break;
-        case 'name':
-        case 'age':
-        case 'profession':
-        case 'health':
-        case 'body':
-        case 'mind':
-        case 'spirit':
-        case 'honor':
-            this[prop] = options[prop];
-            break;
-        default:
-            break;
+        if (options.hasOwnProperty(prop)) {
+            switch (prop) {
+            case 'experience':
+                this.skills.forEach(setExperience);
+                break;
+            case 'name':
+            case 'age':
+            case 'profession':
+            case 'health':
+            case 'body':
+            case 'mind':
+            case 'spirit':
+            case 'honor':
+                this[prop] = options[prop];
+                break;
+            default:
+                break;
+            }
         }
     }
 };
