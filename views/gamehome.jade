@@ -9,6 +9,7 @@ block content
   if turnOnMenu
     script.
       var changesObj = new Object(),
+          cash = #{game.families[0].cash},
           skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
           statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
           honorDescA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
@@ -61,8 +62,8 @@ block content
           option(value='Opulent') Opulent
         #generosity
           label(for='generosity') Generosity
-          input(type='range', name='generosity', max='#{game.families[0].cash', value='0')
-          p 0£
+          input(type='range', name='generosity', max='#{game.families[0].cash', value='#{game.families[0].generosity}')
+          p #{game.families[0].generosity}£
         #holdings.horizontalList
           each holding in game.families[0].holdings
             .holdingSummary
@@ -198,19 +199,20 @@ block content
       .multilist
         ul.listgroup
   if events
-    each ev in events.shown
-      .eventDetailPage(class='notShown', id='#{ev.id}')
-        p #{ev.title}
-        p #{ev.message}
-        each o in ev.results
-          if o.action
+    each ev in events
+      if ev.isChild
+        .subEventDetailPage(class='notShown', id='#{ev.id}')
+          p #{ev.title}
+          p #{ev.message}
+          each o in ev.results
             button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
-    each ev in events.subEvents
-      .subEventDetailPage(class='notShown', id='#{ev.id}')
-        p #{ev.title}
-        p #{ev.message}
-        each o in ev.results
-          button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
+      else
+        .eventDetailPage(class='notShown', id='#{ev.id}')
+          p #{ev.title}
+          p #{ev.message}
+          each o in ev.results
+            if o.action
+              button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
 
   if turnOnMenu
     script.
@@ -268,7 +270,7 @@ block content
         };
 
         var calculateIncome = function () {
-            var result = #{game.families[0].cash};
+            var result = cash;
             $('.holdingDetailPage').each( function () {result+=$(this).data('income'); });
             $('#resources p').text('Resources ' + result + '£');
             $('#generosity input').attr('max', result);
@@ -359,6 +361,7 @@ block content
                 showEvent('#' + evs[0].id);
                 $('#sidebar button').attr('disabled', true);
             } else {
+                calculateResources();
                 showEvent(null);
                 $('#sidebar button').removeAttr('disabled');
             }
@@ -408,6 +411,16 @@ block content
 
                 nextEvent();
                 break;
+            case 'cash':
+                var cObj = changesObj['cash'] || new Object();
+
+                cash += $(this).data('value');
+
+                cObj = cash;
+                changesObj.cash = cash;
+                
+                nextEvent();
+                break;
             case 'log':
             default:
                 nextEvent();
@@ -420,7 +433,7 @@ block content
         // holdingDetailPage
         // *******************************************
         $('.changeSteward').click(function (ev) {
-            ev.preventDefault();
+            ev.preventDefault();    // TODO
         });
 
         var setHoldingView = function(t, toShow) {

@@ -122,7 +122,7 @@ CharacterSchema.statics.factory = function (template, firstKnight) {
 CharacterSchema.methods.fatherHistory = function () {
     "use strict";
     return new TimelineEvent({
-        year: 490,
+        year: 485,
         quarter: 'Winter',
         title: 'Tragedy!',
         message: "Your father died.",
@@ -137,18 +137,24 @@ CharacterSchema.methods.satisfies = function (requirements) {
 
 CharacterSchema.methods.getEvents = function (turn, result) {
     "use strict";
-    if (!result) {result = []; }
+    var character = this,
+        index,
+        e;
 
-    var character = this;
     if (this.queuedEvents && this.queuedEvents.length > 0) {
-        this.queuedEvents.forEach(function (e, i, a) {
+        for (index = 0; index < this.queuedEvents.length; index += 1) {
+            e = this.queuedEvents[index];
             if ((!e.year || e.year === turn.year)
                     && (!e.quarter || e.quarter === turn.quarter)
                     && character.satisfies(e.requirements)) {
-                result.push(e);
-                a.splice(i, 1);
+                if (!result) {
+                    this.queuedEvents.splice(index, 1);
+                    index -= 1;
+                } else {
+                    result.push(e);
+                }
             }
-        });
+        }
     }
 };
 
@@ -177,11 +183,6 @@ CharacterSchema.methods.mergeOptions = function (options) {
             break;
         }
     }
-};
-
-CharacterSchema.methods.setPersonalExpenses = function (options) {
-    "use strict";
-    // TODO
 };
 
 

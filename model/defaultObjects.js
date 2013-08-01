@@ -17,14 +17,14 @@ var defaultObjects = {
     ],
     timelineEvents: [
         {
-            year: 490,
+            year: 485,
             quarter: 'Winter',
             title: 'Hail and Kill!',
-            message: "In the year of Our Lord 490, Britain was ruled by the Uther Pendragon, warlord of the Cymric peoples and king of Albion. As a young knight in Uther's army, can you hold true to your honor and your fealty to your liege lord to uphold the law of the land. Or will you succomb to temptation and bring ruin upon the realm, devil take the hindmost?",
+            message: "In the year of Our Lord 485, Britain was ruled by the Uther Pendragon, warlord of the Cymric peoples and king of Albion. As a young knight in Uther's army, can you hold true to your honor and your fealty to your liege lord to uphold the law of the land. Or will you succomb to temptation and bring ruin upon the realm, devil take the hindmost?",
             results: [{label: 'Done', action: 'log'}]
         },
         {
-            year: 490,
+            year: 485,
             quarter: 'Winter',
             title: 'Bandits!',
             message: "Bandits roam the wastes between civilized lands. With your father dead and only you, a young and untested landlord, in charge of the family holding, a rag tag group of ne'er do wells have holed up in a nearby copse. The shire marshal calls you to muster at the Earl's motte and bailey fortress to search for these rapscalions and bring them to justice!",
@@ -43,7 +43,7 @@ var defaultObjects = {
                     }]
         },
         {
-            year: 490,
+            year: 485,
             quarter: 'Spring',
             message: "Summons to King Uther's Court",
             results: [{label: 'Done', action: 'remove'}]
@@ -87,17 +87,36 @@ var defaultObjects = {
         {
             name: 'Fair',
             cost: 5,
-            hate: -1
+            hate: -1,
+            season: 'Summer',
+            message: 'Peasants, craftsmen and traders from villages for miles around crowd to your lands so to sell and buy all manner of wares.'
         },
         {
             name: 'Horse Race',
             cost: 3,
-            hate: 0
+            hate: 0,
+            season: 'Spring',
+            message: 'Squires and knights from across the county come with their fastest horses to try their skill along the paths outside your holding.',
+            results: [
+                {label: 'Race yourself', action: 'next', value: {
+                    title: 'Win the Purse',
+                    message: "Ride 'em cowboy!",
+                    results: [{label: 'Collect', action: 'cash', value: 2 }]
+                }
+                    },
+                {label: 'Bet on another rider', action: 'next', value: {
+                    title: 'Lose your bet.',
+                    message: "Bah!",
+                    results: [{label: 'Pay Out', action: 'cash', value: -2 }]
+                }
+                    }]
         },
         {
             name: 'Tournament',
             cost: 15,
-            hate: -2
+            hate: -2,
+            season: 'Summer',
+            message: 'Doh!'
         }
     ]
 };

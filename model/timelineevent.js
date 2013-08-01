@@ -13,6 +13,7 @@ var TimelineEventSchema = new Schema({
     requirements:   [],
     title:          String,
     message:        String,
+    isChild:        Boolean,
     results:        []
 });
 
@@ -23,7 +24,8 @@ TimelineEventSchema.statics.factory = function (template, subcontainer) {
         year: template.year,
         quarter: template.quarter,
         title: template.title,
-        message: template.message
+        message: template.message,
+        isChild: false
     });
 
     if (template.requirements) {
@@ -34,11 +36,14 @@ TimelineEventSchema.statics.factory = function (template, subcontainer) {
 
     if (template.results) {
         template.results.forEach(function (r) {
-            var resultObject = {label: r.label, action: r.action, key: r.key, value: r.value },
-                innerResult = (resultObject.action === 'next') ? new TimelineEvent(resultObject.value) : null;
-            if (innerResult) {
-                resultObject.value = innerResult.id;
-                if (subcontainer) {subcontainer.push(innerResult); }
+            var innerResult, resultObject = {label: r.label, action: r.action, key: r.key, value: r.value };
+            if (resultObject.action === 'next') {
+                innerResult = TimelineEvent.factory(resultObject.value, subcontainer);
+                if (innerResult) {
+                    resultObject.value = innerResult.id;
+                    innerResult.isChild = true;
+                    if (subcontainer) {subcontainer.push(innerResult); }
+                }
             }
             result.results.push(resultObject);
         });

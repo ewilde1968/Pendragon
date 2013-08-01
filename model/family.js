@@ -17,6 +17,8 @@ var FamilySchema = new Schema({
     members:        [Character.schema],   // patriarch is always zeroeth member
     cash:           Number,
     specialty:      String,
+    generosity:     Number,
+    livingStandard: String,
     queuedEvents:   [TimelineEvent.schema]
 });
 
@@ -24,7 +26,10 @@ var FamilySchema = new Schema({
 FamilySchema.statics.factory = function (template, settings) {
     "use strict";
     var result = new Family({name: template.name,
-                             cash: 0
+                             specialty: template.specialty || null,
+                             cash: template.cash || 0,
+                             generosity: template.generosity || 0,
+                             livingStandard: template.livingStandard || 'Normal'
                             }),
         firstKnight = Character.factory({name: 'first knight',
                                          profession: 'Knight'
@@ -40,7 +45,7 @@ FamilySchema.statics.factory = function (template, settings) {
     holding.addSteward(firstSteward);
     result.holdings.push(holding);
 
-    result.generateSpecialty();
+    if (!result.specialty) {result.generateSpecialty(); }
 
     return result;
 };
@@ -54,9 +59,9 @@ FamilySchema.methods.generateSpecialty = function () {
 FamilySchema.methods.mergeOptions = function (options) {
     "use strict";
     if (options && options.changes) {
-        if (options.changes.generosity || options.changes.livingStyle) {
-            this.members[0].setPersonalExpenses(options.changes);
-        }
+        this.generosity = options.changes.generosity || this.generosity;
+        this.livingStandard = options.changes.livingStyle || this.livingStandard;
+        this.cash = options.changes.cash || this.cash;
 
         this.members.forEach(function (m) {
             if (options.changes[m.id]) {
@@ -98,21 +103,31 @@ FamilySchema.methods.satisfies = function (requirements) {
 
 FamilySchema.methods.getEvents = function (turn, result) {
     "use strict";
-    if (!result) {result = []; }
-
     this.members.forEach(function (m) {
-        m.getEvents(turn, result);
+        m.getEvents(turn, result);  // null result means delete old events
+    });
+    
+    this.holdings.forEach(function (h) {
+        h.getEvents(turn, result);
     });
 
-    var qe = this.queuedEvents;
+    var qe = this.queuedEvents,
+        index,
+        e;
     if (qe && qe.length > 0) {
-        qe.forEach(function (e, i, a) {
-            if (e.year === turn.year && e.quarter === turn.quarter
-                    && this.satisfies(e.requirements)) {
-                result.push(e);
-                a.splice(i, 1);
+        for (index = 0; index < qe.length; index += 1) {
+            e = qe[index];
+            if ((!e.year || e.year === turn.year)
+                    && (!e.quarter || e.quarter === turn.quarter)
+                    && holding.satisfies(e.requirements)) {
+                if (!result) {
+                    qe.splice(index, 1);
+                    index -= 1;
+                } else {
+                    result.push(e);
+                }
             }
-        });
+        }
     }
 };
 

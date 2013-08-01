@@ -63,16 +63,25 @@ exports.update = function (req, res, next) {
     "use strict";
     Game.findById(req.params.gameid, function (err, game) {
         if (err) {return err; }
-        
-        if (req.body && req.body.changes) {
-            req.body.changes = JSON.parse(req.body.changes);
-        }
 
-        game.mergeOptions(req.body);
-        game.nextTurn(function (err, game) {
-            if (err) {return err; }
-            showGameHome(req, res, game);
-        });
+        if (game) {
+            // end previous quarter
+            game.endQuarter();
+        
+            // setup next quarter
+            if (req.body && req.body.changes) {
+                req.body.changes = JSON.parse(req.body.changes);
+            }
+            game.mergeOptions(req.body);
+
+            // execute quarter
+            game.nextTurn(function (err, game) {
+                if (err) {return err; }
+                showGameHome(req, res, game);
+            });
+        } else {
+            res.redirect('/user/' + req.params.userid);
+        }
     });
 };
 
