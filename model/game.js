@@ -110,15 +110,36 @@ GameSchema.methods.nextTurn = function (cb) {
 
     switch (this.turn.quarter) {
     case 'Winter':
+        // TODO determine child births
+        // TODO determine age results
+        // TODO determine peasant population growth
+        // TODO determine hatred fallout
+        // TODO determine holding events
+        // TODO determine pentacost court plans
         this.turn.quarter = 'Spring';
         break;
     case 'Spring':
+        // TODO determine pentacost court results
+        // TODO determine any marriages or daliances
+        // TODO determine campaign season plans
+        // TODO determine campaign season quests
         this.turn.quarter = 'Summer';
         break;
     case 'Summer':
+        // TODO determine campaign season results
+        // TODO determine quest results
+        // TODO determine pregnancies
+        // TODO determine Christmas court plans
         this.turn.quarter = 'Fall';
         break;
     case 'Fall':
+        // TODO determine harvest results
+        // TODO determine investment completions
+        // TODO determine training results
+        // TODO determine any experience results
+        // TODO determine generosity results
+        // TODO determine Christmas court results
+        // TODO determine any marriages or daliances
         this.turn.quarter = 'Winter';
         this.turn.year += 1;
         break;
