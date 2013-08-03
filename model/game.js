@@ -13,7 +13,6 @@ var mongoose = require('mongoose'),
 var GameSchema = new Schema({
     owner:          { type: ObjectId, required: true },
     settings:       Object,
-    state:          String,
     families:       [Family.schema],
     turn:           { year: Number, quarter: String },
     queuedEvents:   [TimelineEvent.schema]
@@ -24,12 +23,11 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
     "use strict";
     var result = new Game({owner: ownerId,
                            settings: settings,
-                           state: 'initial',
                            turn: {year: 485, quarter: "Winter"}
                           });
 
-    defaultObjects.families.forEach(function (memeTemplate) {
-        var f = Family.factory(memeTemplate, settings);
+    defaultObjects.families.forEach(function (template) {
+        var f = Family.factory(template, settings);
         if (settings.family === f.name) {
             result.families.unshift(f);      // player is always the zeroeth element
         } else {
@@ -60,7 +58,7 @@ GameSchema.methods.satisfies = function (requirements) {
 GameSchema.methods.getEvents = function (removeOld) {
     "use strict";
     var result = removeOld ? null : [],
-        game = this,
+        that = this,
         qe = this.queuedEvents,
         index,
         e;
@@ -69,16 +67,16 @@ GameSchema.methods.getEvents = function (removeOld) {
     if (!removeOld) {
         this.families[0].getEvents(this.turn, result);  // only add events for the player's family
     } else {
-        this.families.forEach(function (f) {f.getEvents(game.turn, result); });
+        this.families.forEach(function (f) {f.getEvents(that.turn, result); });
     }
 
     // add timeline events
     if (qe && qe.length > 0) {
         for (index = 0; index < qe.length; index += 1) {
             e = qe[index];
-            if ((!e.year || e.year === game.turn.year)
-                    && (!e.quarter || e.quarter === game.turn.quarter)
-                    && game.satisfies(e.requirements)) {
+            if ((!e.year || e.year === this.turn.year)
+                    && (!e.quarter || e.quarter === this.turn.quarter)
+                    && this.satisfies(e.requirements)) {
                 if (!result) {
                     qe.splice(index, 1);
                     index -= 1;
@@ -104,35 +102,50 @@ GameSchema.methods.endQuarter = function () {
     this.families.forEach(function (f) {f.endQuarter(); });
 };
 
-GameSchema.methods.nextTurn = function (cb) {
+GameSchema.methods.winter = function () {
     "use strict";
-    var err = null;
-
-    switch (this.turn.quarter) {
-    case 'Winter':
+    // Activities that occur in Winter:
+    //      age each character a year
         // TODO determine child births
-        // TODO determine age results
         // TODO determine peasant population growth
         // TODO determine hatred fallout
         // TODO determine holding events
         // TODO determine pentacost court plans
-        this.turn.quarter = 'Spring';
-        break;
-    case 'Spring':
+    var that = this;
+    this.families.forEach(function (f) {
+        f.winter(that);
+    });
+};
+
+GameSchema.methods.spring = function () {
+    "use strict";
+    // Activities that occur in Spring:
         // TODO determine pentacost court results
         // TODO determine any marriages or daliances
         // TODO determine campaign season plans
         // TODO determine campaign season quests
-        this.turn.quarter = 'Summer';
-        break;
-    case 'Summer':
+    var that = this;
+    this.families.forEach(function (f) {
+        f.spring(that);
+    });
+};
+
+GameSchema.methods.summer = function () {
+    "use strict";
+    // Activities that occur in Summer:
         // TODO determine campaign season results
         // TODO determine quest results
         // TODO determine pregnancies
         // TODO determine Christmas court plans
-        this.turn.quarter = 'Fall';
-        break;
-    case 'Fall':
+    var that = this;
+    this.families.forEach(function (f) {
+        f.summer(that);
+    });
+};
+
+GameSchema.methods.fall = function () {
+    "use strict";
+    // Activities that occur in Fall:
         // TODO determine harvest results
         // TODO determine investment completions
         // TODO determine training results
@@ -140,11 +153,39 @@ GameSchema.methods.nextTurn = function (cb) {
         // TODO determine generosity results
         // TODO determine Christmas court results
         // TODO determine any marriages or daliances
+    var that = this;
+    this.families.forEach(function (f) {
+        f.fall(that);
+    });
+};
+
+GameSchema.methods.nextTurn = function (cb) {
+    "use strict";
+    var err = null;
+
+    switch (this.turn.quarter) {
+    case 'Winter':
+        this.winter();
+        this.turn.quarter = 'Spring';
+        break;
+    case 'Spring':
+        this.spring();
+        this.turn.quarter = 'Summer';
+        break;
+    case 'Summer':
+        this.summer();
+        this.turn.quarter = 'Fall';
+        break;
+    case 'Fall':
+        this.fall();
         this.turn.quarter = 'Winter';
         this.turn.year += 1;
         break;
     default:
-        throw 'Invalid quarter';
+        throw {
+            name: 'Invalid quarter',
+            message: 'GameSchema.methods.nextTurn'
+        };
     }
 
     this.update(cb);

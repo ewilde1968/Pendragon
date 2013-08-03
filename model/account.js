@@ -1,4 +1,3 @@
-
 /*
  * User model
 */
@@ -26,7 +25,10 @@ AccountSchema.statics.newAccount = function (username, password, cb) {
     if (acct) {
         acct.save(cb);
     } else {
-        throw "Account.updateAccount - new Account failed";
+        throw {
+            name: "new Account failed",
+            message: "Account.updateAccount"
+        };
     }
 };
 

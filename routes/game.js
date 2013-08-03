@@ -34,7 +34,10 @@ exports.createGame = function (req, res, next) {
             if (game) {
                 res.redirect('/user/' + req.params.userid + '/game/' + game.id);
             } else {
-                throw 'GET game:newGame - invalid Game object';
+                throw {
+                    name: 'invalid Game object',
+                    message: 'GET game:newGame - game.exports.createGame'
+                };
             }
         });
 };

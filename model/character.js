@@ -23,107 +23,72 @@ var CharacterSchema = new Schema({
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
     queuedEvents:   [TimelineEvent.schema]
-});
+}, {collection: 'characters', discriminatorKey: '_type' });
 
 
-var generateStats = function (character) {
-    "use strict";
-    var focus = Math.floor(Math.random() * 5);
-    switch (focus) {
-    case 0: // ectomorph
-        character.body = 3;
-        character.mind = 5;
-        character.soul = 4;
-        character.skills.push(Skill.factory({name: 'Learning', level: 3}));
-        break;
-    case 1: // mesomorph
-        character.body = 5;
-        character.mind = 3;
-        character.soul = 4;
-        character.skills.push(Skill.factory({name: 'Brawling', level: 3}));
-        break;
-    case 2: // spiritual ascetic
-        character.body = 3;
-        character.mind = 4;
-        character.soul = 5;
-        character.skills.push(Skill.factory({name: 'Orate', level: 3}));
-        break;
-    case 3: // spiritual dunce
-        character.body = 4;
-        character.mind = 3;
-        character.soul = 5;
-        character.skills.push(Skill.factory({name: 'Religion', level: 3}));
-        break;
-    case 4: // balance
-        character.body = 4;
-        character.mind = 4;
-        character.soul = 4;
-        character.skills.push(Skill.factory({name: 'Religion', level: 3}));
-        break;
-    }
-};
 
-CharacterSchema.statics.factory = function (template, firstKnight) {
+CharacterSchema.statics.factory = function (template) {
     "use strict";
     var result = new Character(template);
-    if (!template.mind || !template.body || !template.soul) {
-        generateStats(result);
-    }
-
-    if (firstKnight) {
-        result.queuedEvents.push(result.fatherHistory());
-    }
-
-    switch (result.profession) {
-    case 'Knight':
-        if (!template.age) {result.age = 21; }
-        result.soul -= 1;
-        result.body += 1;
-        result.honor = 5;
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 3}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: 3}));
-        result.skills.push(Skill.factory({name: 'Spear', level: 3}));
-        result.armor = 'Chain Hauberk';
-        result.shield = true;
-        break;
-    case 'Lady':
-        if (!template.age) {result.age = 16; }
-        result.soul += 1;
-        result.body -= 1;
-        result.honor = 4;
-        result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
-        break;
-    case 'Squire':
-        // will add to body, skills and honor when they reach 21
-        if (!template.age) {result.age = 16; }
-        result.soul -= 1;
-        result.honor = 4;
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 1}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
-        result.skills.push(Skill.factory({name: 'Spear', level: 1}));
-        break;
-    case 'Steward':
-        if (!template.age) {result.age = 21; }
-        result.honor = 4;
-        result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
-        result.skills.push(Skill.factory({name: 'Swordsmanship', level: 1}));
-        result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
-        result.skills.push(Skill.factory({name: 'Spear', level: 1}));
-        break;
-    default:
-        throw 'Invalid Character profession setting';
-    }
-
-    result.health = result.body;
+    this.initialize();
 
     return result;
 };
 
+CharacterSchema.methods.initialize = function () {
+    "use strict";
+    if (!this.mind || !this.body || !this.soul) {
+        this.generateStats();   // TODO find inheretance pattern
+    }
+    
+    return this;
+};
+
+CharacterSchema.methods.generateStats = function () {
+    "use strict";
+    var focus = Math.floor(Math.random() * 5);
+    switch (focus) {
+    case 0: // ectomorph
+        this.body = 3;
+        this.mind = 5;
+        this.soul = 4;
+        this.skills.push(Skill.factory({name: 'Learning', level: 3}));
+        break;
+    case 1: // mesomorph
+        this.body = 5;
+        this.mind = 3;
+        this.soul = 4;
+        this.skills.push(Skill.factory({name: 'Brawling', level: 3}));
+        break;
+    case 2: // spiritual ascetic
+        this.body = 3;
+        this.mind = 4;
+        this.soul = 5;
+        this.skills.push(Skill.factory({name: 'Orate', level: 3}));
+        break;
+    case 3: // spiritual dunce
+        this.body = 4;
+        this.mind = 3;
+        this.soul = 5;
+        this.skills.push(Skill.factory({name: 'Religion', level: 3}));
+        break;
+    case 4: // balance
+        this.body = 4;
+        this.mind = 4;
+        this.soul = 4;
+        this.skills.push(Skill.factory({name: 'Religion', level: 3}));
+        break;
+    }
+
+    this.health = this.body;
+    
+    return this;
+};
+
+
 CharacterSchema.methods.fatherHistory = function () {
     "use strict";
     return new TimelineEvent({
-        year: 485,
-        quarter: 'Winter',
         title: 'Tragedy!',
         message: "Your father died.",
         results: [{label: 'Done', action: 'log'}]
@@ -155,6 +120,8 @@ CharacterSchema.methods.getEvents = function (turn, result) {
             }
         }
     }
+    
+    return this;
 };
 
 CharacterSchema.methods.mergeOptions = function (options) {
@@ -184,6 +151,38 @@ CharacterSchema.methods.mergeOptions = function (options) {
             }
         }
     }
+    
+    return this;
+};
+
+CharacterSchema.methods.increaseAge = function () {
+    "use strict";
+    this.age += 1;
+    if (this.age === 15) {
+        switch (this.profession) {
+        case 'Child':
+            // child to lady or squire
+            break;
+        default:
+            break;
+        }
+    } else if (this.age === 21) {
+        // coming of age
+        switch (this.profession) {
+        case 'Knight':
+            // squire to knighthood test and events
+        case 'Squire':
+        case 'Lady':
+        case 'Steward':
+            break;
+        default:
+            break;
+        }
+    } else if (this.age > 40) {
+        // do some aging
+    }
+    
+    return this;
 };
 
 

@@ -8,6 +8,8 @@ var mongoose = require('mongoose'),
     ObjectId = Schema.ObjectId,
     Locale = require('./locale'),
     Character = require('./character'),
+    Knight = require('./knight'),
+    Steward = require('./steward'),
     TimelineEvent = require('./timelineevent');
 
 
@@ -31,10 +33,10 @@ FamilySchema.statics.factory = function (template, settings) {
                              generosity: template.generosity || 0,
                              livingStandard: template.livingStandard || 'Normal'
                             }),
-        firstKnight = Character.factory({name: 'first knight',
+        firstKnight = Knight.factory({name: 'first knight',
                                          profession: 'Knight'
                                         }, true),
-        firstSteward = Character.factory({name: 'first steward',
+        firstSteward = Steward.factory({name: 'first steward',
                                           profession: 'Steward'
                                          }),
         holding = Locale.factory(template.locale);
@@ -129,6 +131,32 @@ FamilySchema.methods.getEvents = function (turn, result) {
             }
         }
     }
+};
+
+FamilySchema.methods.winter = function (game) {
+    "use strict";
+    // Activities that occur in Winter:
+    //      age each character a year
+    this.members.forEach(function (m) {
+        m.increaseAge();
+        // TODO determine child births
+        // TODO determine peasant population growth
+        // TODO determine hatred fallout
+        // TODO determine holding events
+        // TODO determine pentacost court plans
+    });
+};
+
+FamilySchema.methods.spring = function (game) {
+    "use strict";
+};
+
+FamilySchema.methods.summer = function (game) {
+    "use strict";
+};
+
+FamilySchema.methods.fall = function (game) {
+    "use strict";
 };
 
 var Family = mongoose.model('Family', FamilySchema);

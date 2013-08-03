@@ -57,12 +57,12 @@ LocaleSchema.statics.factory = function (template) {
 
 LocaleSchema.methods.addInvestment = function (invest, prebuilt) {
     "use strict";
-    var holding = this;
+    var that = this;
     this.allowedInvests.forEach(function (inv, i, arr) {
         if (inv.name === invest) {
             arr.splice(i, 1);
             inv.built = prebuilt || inv.built;
-            holding.investments.push(inv);
+            that.investments.push(inv);
         }
     });
 };
@@ -81,16 +81,16 @@ LocaleSchema.methods.addSteward = function (s) {
 
 LocaleSchema.methods.addFeast = function (f) {
     "use strict";
-    var holding = this;
+    var that = this;
     this.allowedFeasts.forEach(function (feast) {
         if (feast.name === f.name) {
             var ev = TimelineEvent.factory({
                     quarter: feast.season,
-                    title: feast.name + ' at ' + holding.name,
+                    title: feast.name + ' at ' + that.name,
                     message: feast.message || '',
                     results: feast.results || [{label: 'Done', action: 'log'}]
-                }, holding.queuedEvents);
-            holding.queuedEvents.push(ev);
+                }, that.queuedEvents);
+            that.queuedEvents.push(ev);
         }
     });
 };
