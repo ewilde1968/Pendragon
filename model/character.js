@@ -9,6 +9,14 @@ var mongoose = require('mongoose'),
     Skill = require('./skill'),
     TimelineEvent = require('./timelineevent');
 
+
+var decreptitudeYear = [];
+decreptitudeYear[21] = +1;
+decreptitudeYear[40] = -1;
+decreptitudeYear[70] = -1;
+decreptitudeYear[90] = -1;
+
+
 var CharacterSchema = new Schema({
     name:           { type: String, required: true, index: true },
     profession:     { type: String, required: true },
@@ -158,28 +166,11 @@ CharacterSchema.methods.mergeOptions = function (options) {
 CharacterSchema.methods.increaseAge = function () {
     "use strict";
     this.age += 1;
-    if (this.age === 15) {
-        switch (this.profession) {
-        case 'Child':
-            // child to lady or squire
-            break;
-        default:
-            break;
-        }
-    } else if (this.age === 21) {
-        // coming of age
-        switch (this.profession) {
-        case 'Knight':
-            // squire to knighthood test and events
-        case 'Squire':
-        case 'Lady':
-        case 'Steward':
-            break;
-        default:
-            break;
-        }
-    } else if (this.age > 40) {
-        // do some aging
+
+    // check to see if the body and health values change this year
+    if (decreptitudeYear[this.age]) {
+        this.body += decreptitudeYear[this.age];
+        this.health += decreptitudeYear[this.age];  // TODO check for death as this.health setter
     }
     
     return this;

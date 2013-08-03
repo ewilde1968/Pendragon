@@ -38,7 +38,8 @@ SquireSchema.statics.factory = function (template, firstKnight) {
 
 SquireSchema.methods.increaseAge = function () {
     "use strict";
-    this.age += 1;
+    this.prototype.increaseAge();
+
     if (this.age >= 21) {
         // coming of age
     }

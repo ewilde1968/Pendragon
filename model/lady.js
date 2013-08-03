@@ -32,7 +32,8 @@ LadySchema.statics.factory = function (template, firstKnight) {
 
 LadySchema.methods.increaseAge = function () {
     "use strict";
-    this.age += 1;
+    this.prototype.increaseAge();
+
     if (this.age >= 38) {
         // menopause
     }
