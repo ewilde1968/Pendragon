@@ -68,20 +68,17 @@ exports.update = function (req, res, next) {
         if (err) {return err; }
 
         if (game) {
-            // end previous quarter
-            game.endQuarter();
-        
             // setup next quarter
             if (req.body && req.body.changes) {
                 req.body.changes = JSON.parse(req.body.changes);
             }
-            game.mergeOptions(req.body);
 
-            // execute quarter
-            game.nextTurn(function (err, game) {
-                if (err) {return err; }
-                showGameHome(req, res, game);
-            });
+            game.endQuarter()
+                .mergeOptions(req.body)
+                .nextTurn(function (err, game) {
+                    if (err) {return err; }
+                    showGameHome(req, res, game);
+                });
         } else {
             res.redirect('/user/' + req.params.userid);
         }

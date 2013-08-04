@@ -5,8 +5,6 @@
 var Database, require, module; // forward to clear out JSLint errors
 
 
-module.exports = Database;
-
 var mongoose = require('mongoose'),
     defaultObjects = require('./defaultObjects');
 
@@ -39,3 +37,5 @@ var database = function (databaseName) {
     
     return that;
 };
+
+module.exports = database;

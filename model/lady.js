@@ -11,7 +11,7 @@ var mongoose = require('mongoose'),
     Character = require('./character');
 
 var LadySchema = Character.schema.extend({
-    children:       [Character.schema]
+    children:       [ObjectId]
 });
 
 

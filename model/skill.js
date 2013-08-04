@@ -9,7 +9,7 @@ var mongoose = require('mongoose'),
 
 var SkillSchema = new Schema({
     name:           { type: String, required: true },
-    level:          { typs: Number, set: set_level },
+    level:          { type: Number, set: set_level },
     experience:     Boolean
 });
 

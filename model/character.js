@@ -21,17 +21,18 @@ var CharacterSchema = new Schema({
     name:           { type: String, required: true, index: true },
     profession:     { type: String, required: true },
     age:            Number,
+    bodyType:       String,
     health:         Number,
     body:           Number,
     mind:           Number,
     soul:           Number,
     honor:          Number,
-    fertility:      Number,
+    fertility:      Boolean,
     skills:         [Skill.schema],
     armor:          String,
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
-    parents:        [Character.schema],
+    parents:        [ObjectId],
     queuedEvents:   [TimelineEvent.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
 
@@ -60,31 +61,36 @@ CharacterSchema.methods.generateStats = function () {
     "use strict";
     var focus = Math.floor(Math.random() * 5);
     switch (focus) {
-    case 0: // ectomorph
+    case 0:
+        this.bodyType = 'ectomorph';
         this.body = 3;
         this.mind = 5;
         this.soul = 4;
         this.skills.push(Skill.factory({name: 'Learning', level: 3}));
         break;
-    case 1: // mesomorph
+    case 1:
+        this.bodyType = 'mesomorph';
         this.body = 5;
         this.mind = 3;
         this.soul = 4;
         this.skills.push(Skill.factory({name: 'Brawling', level: 3}));
         break;
-    case 2: // spiritual ascetic
+    case 2:
+        this.bodyType = 'spiritual ascetic';
         this.body = 3;
         this.mind = 4;
         this.soul = 5;
         this.skills.push(Skill.factory({name: 'Orate', level: 3}));
         break;
-    case 3: // spiritual dunce
+    case 3:
+        this.bodyType = 'spiritual dunce';
         this.body = 4;
         this.mind = 3;
         this.soul = 5;
         this.skills.push(Skill.factory({name: 'Religion', level: 3}));
         break;
     case 4: // balance
+        this.bodyType = 'cygnus';
         this.body = 4;
         this.mind = 4;
         this.soul = 4;

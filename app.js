@@ -2,9 +2,8 @@
 /**
  * Module dependencies.
  */
-
 var express = require('express'),
-    Database = require('./model/database'),
+    database = require('./model/database'),
     routes = require('./routes'),
     user = require('./routes/user'),
     game = require('./routes/game'),
@@ -45,6 +44,7 @@ app.post('/user/:userid/game/:gameid', user.ensureSignedIn, game.update);
 // setup DB
 app.database = database('pendragon').initialize();
 
-http.createServer(app).listen(app.get('port'), function() {
+http.createServer(app).listen(app.get('port'), function () {
+    "use strict";
     console.log('Express server listening on port ' + app.get('port'));
 });
