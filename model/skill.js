@@ -36,6 +36,8 @@ SkillSchema.methods.increase = function (value) {
     value = value || 1;
 
     this.level += value;
+    
+    return this;
 };
 
 SkillSchema.methods.experienceCheck = function () {
@@ -43,6 +45,8 @@ SkillSchema.methods.experienceCheck = function () {
     if (Math.floor(Math.random() * 20 + 1) >= (this.level * 5)) {
         this.increase();
     }
+    
+    return this;
 };
 
 var Skill = mongoose.model('Skill', SkillSchema);

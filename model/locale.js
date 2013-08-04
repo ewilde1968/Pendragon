@@ -65,6 +65,8 @@ LocaleSchema.methods.addInvestment = function (invest, prebuilt) {
             that.investments.push(inv);
         }
     });
+    
+    return this;
 };
 
 LocaleSchema.methods.addSteward = function (s) {
@@ -75,8 +77,10 @@ LocaleSchema.methods.addSteward = function (s) {
         this.steward = s.id;
         if ('Steward' === s.profession) {this.cost += 1; }
     } else {
-        delete this.steward;
+        this.steward = null;
     }
+    
+    return this;
 };
 
 LocaleSchema.methods.addFeast = function (f) {
@@ -93,6 +97,8 @@ LocaleSchema.methods.addFeast = function (f) {
             that.queuedEvents.push(ev);
         }
     });
+    
+    return this;
 };
 
 LocaleSchema.methods.mergeOptions = function (options) {
@@ -118,6 +124,8 @@ LocaleSchema.methods.mergeOptions = function (options) {
                          };
         }
     }
+    
+    return this;
 };
 
 LocaleSchema.methods.satisfies = function (requirements) {
@@ -145,6 +153,8 @@ LocaleSchema.methods.getEvents = function (turn, result) {
             }
         }
     }
+    
+    return this;
 };
 
 

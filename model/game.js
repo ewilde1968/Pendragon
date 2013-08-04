@@ -43,11 +43,15 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
     });
 
     result.update(cb);
+
+    return result;
 };
 
 GameSchema.methods.update = function (cb) {
     "use strict";
     this.save(cb);
+    
+    return this;
 };
 
 GameSchema.methods.satisfies = function (requirements) {
@@ -93,6 +97,8 @@ GameSchema.methods.getEvents = function (removeOld) {
 GameSchema.methods.mergeOptions = function (options) {
     "use strict";
     this.families[0].mergeOptions(options);
+    
+    return this;
 };
 
 GameSchema.methods.endQuarter = function () {
@@ -100,6 +106,8 @@ GameSchema.methods.endQuarter = function () {
     this.getEvents(true);   // throw out the old events
 
     this.families.forEach(function (f) {f.endQuarter(); });
+    
+    return this;
 };
 
 GameSchema.methods.winter = function () {
@@ -114,6 +122,8 @@ GameSchema.methods.winter = function () {
     this.families.forEach(function (f) {
         f.winter(that);
     });
+    
+    return this;
 };
 
 GameSchema.methods.spring = function () {
@@ -127,6 +137,8 @@ GameSchema.methods.spring = function () {
     this.families.forEach(function (f) {
         f.spring(that);
     });
+    
+    return this;
 };
 
 GameSchema.methods.summer = function () {
@@ -140,6 +152,8 @@ GameSchema.methods.summer = function () {
     this.families.forEach(function (f) {
         f.summer(that);
     });
+    
+    return this;
 };
 
 GameSchema.methods.fall = function () {
@@ -156,6 +170,8 @@ GameSchema.methods.fall = function () {
     this.families.forEach(function (f) {
         f.fall(that);
     });
+    
+    return this;
 };
 
 GameSchema.methods.nextTurn = function (cb) {
@@ -188,6 +204,8 @@ GameSchema.methods.nextTurn = function (cb) {
     }
 
     this.update(cb);
+    
+    return this;
 };
 
 

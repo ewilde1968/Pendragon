@@ -30,6 +30,8 @@ AccountSchema.statics.newAccount = function (username, password, cb) {
             message: "Account.updateAccount"
         };
     }
+    
+    return acct;
 };
 
 AccountSchema.statics.updateAccount = function (userId, username, password) {
@@ -38,11 +40,15 @@ AccountSchema.statics.updateAccount = function (userId, username, password) {
     var acct = Account.findByIdAndUpdate(userId,
                                          {email: username, password: password}
                                         ).exec();
+    
+    return acct;
 };
 
 AccountSchema.statics.login = function (username, password, cb) {
     "use strict";
     var acct = Account.findOne({email: username, password: password}, cb);
+    
+    return acct;
 };
 
 Account = mongoose.model('Account', AccountSchema);

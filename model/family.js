@@ -56,6 +56,8 @@ FamilySchema.methods.generateSpecialty = function () {
     "use strict";
     // called only at family construction
     this.specialty = 'horsemanship';  // TODO
+    
+    return this;
 };
 
 FamilySchema.methods.mergeOptions = function (options) {
@@ -77,10 +79,14 @@ FamilySchema.methods.mergeOptions = function (options) {
             }
         });
     }
+    
+    return this;
 };
 
 FamilySchema.methods.endQuarter = function () {
     "use strict";
+    
+    return this;
 };
 
 FamilySchema.methods.resources = function () {
@@ -131,6 +137,8 @@ FamilySchema.methods.getEvents = function (turn, result) {
             }
         }
     }
+    
+    return this;
 };
 
 FamilySchema.methods.winter = function (game) {
@@ -145,14 +153,20 @@ FamilySchema.methods.winter = function (game) {
         // TODO determine holding events
         // TODO determine pentacost court plans
     });
+    
+    return this;
 };
 
 FamilySchema.methods.spring = function (game) {
     "use strict";
+    
+    return this;
 };
 
 FamilySchema.methods.summer = function (game) {
     "use strict";
+    
+    return this;
 };
 
 FamilySchema.methods.fall = function (game) {
@@ -168,6 +182,8 @@ FamilySchema.methods.fall = function (game) {
         // TODO determine generosity results
         // TODO determine Christmas court results
         // TODO determine any marriages or daliances
+    
+    return this;
 };
 
 var Family = mongoose.model('Family', FamilySchema);

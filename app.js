@@ -43,8 +43,7 @@ app.get('/user/:userid/game/:gameid', user.ensureSignedIn, game.home);
 app.post('/user/:userid/game/:gameid', user.ensureSignedIn, game.update);
 
 // setup DB
-app.database = new Database('pendragon');
-app.database.initialize();
+app.database = database('pendragon').initialize();
 
 http.createServer(app).listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));

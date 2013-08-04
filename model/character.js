@@ -187,6 +187,8 @@ CharacterSchema.methods.increaseSkill = function (name, value) {
     this.skills.forEach(function (s) {
         s.increase(value);
     });
+    
+    return this;
 };
 
 
