@@ -26,10 +26,12 @@ var CharacterSchema = new Schema({
     mind:           Number,
     soul:           Number,
     honor:          Number,
+    fertility:      Number,
     skills:         [Skill.schema],
     armor:          String,
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
+    parents:        [Character.schema],
     queuedEvents:   [TimelineEvent.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
 
@@ -38,16 +40,18 @@ var CharacterSchema = new Schema({
 CharacterSchema.statics.factory = function (template) {
     "use strict";
     var result = new Character(template);
-    this.initialize();
+    this.initialize(template);
 
     return result;
 };
 
-CharacterSchema.methods.initialize = function () {
+CharacterSchema.methods.initialize = function (template) {
     "use strict";
-    if (!this.mind || !this.body || !this.soul) {
+    if (!template.mind || !template.body || !template.soul) {
         this.generateStats();   // TODO find inheretance pattern
     }
+    
+    if (template.age >= 14) {this.fertility = true; }
     
     return this;
 };
@@ -172,8 +176,17 @@ CharacterSchema.methods.increaseAge = function () {
         this.body += decreptitudeYear[this.age];
         this.health += decreptitudeYear[this.age];  // TODO check for death as this.health setter
     }
-    
+
+    if (this.age >= 14) {this.fertility = true; }
+
     return this;
+};
+
+CharacterSchema.methods.increaseSkill = function (name, value) {
+    "use strict";
+    this.skills.forEach(function (s) {
+        s.increase(value);
+    });
 };
 
 

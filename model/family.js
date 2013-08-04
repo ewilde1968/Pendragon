@@ -157,6 +157,17 @@ FamilySchema.methods.summer = function (game) {
 
 FamilySchema.methods.fall = function (game) {
     "use strict";
+    // Activities that occur in Fall:
+    //      experience checks for all family members
+    this.members.forEach(function (m) {
+        m.skills.forEach(function (s) {s.experienceCheck(); });
+    });
+        // TODO determine harvest results
+        // TODO determine investment completions
+        // TODO determine training results
+        // TODO determine generosity results
+        // TODO determine Christmas court results
+        // TODO determine any marriages or daliances
 };
 
 var Family = mongoose.model('Family', FamilySchema);

@@ -17,7 +17,7 @@ var StewardSchema = Character.schema.extend({
 StewardSchema.statics.factory = function (template) {
     "use strict";
     var result = new Steward(template);
-    result.initialize();
+    result.initialize(template);
 
     result.profession = 'Steward';
 

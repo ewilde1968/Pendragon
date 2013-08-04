@@ -106,7 +106,6 @@ GameSchema.methods.winter = function () {
     "use strict";
     // Activities that occur in Winter:
     //      age each character a year
-        // TODO determine child births
         // TODO determine peasant population growth
         // TODO determine hatred fallout
         // TODO determine holding events
@@ -149,7 +148,7 @@ GameSchema.methods.fall = function () {
         // TODO determine harvest results
         // TODO determine investment completions
         // TODO determine training results
-        // TODO determine any experience results
+    // experience checks for all family members
         // TODO determine generosity results
         // TODO determine Christmas court results
         // TODO determine any marriages or daliances

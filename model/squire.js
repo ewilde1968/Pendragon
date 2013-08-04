@@ -17,7 +17,7 @@ var SquireSchema = Character.schema.extend({
 SquireSchema.statics.factory = function (template, firstKnight) {
     "use strict";
     var result = new Squire(template);
-    result.initialize();
+    result.initialize(template);
 
     result.profession = 'Squire';
 
@@ -40,8 +40,16 @@ SquireSchema.methods.increaseAge = function () {
     "use strict";
     this.prototype.increaseAge();
 
-    if (this.age >= 21) {
+    if (this.age === 21) {
         // coming of age
+        this.increaseSkill('Swordsmanship');
+        this.increaseSkill('Horsemanship');
+        this.increaseSkill('Spear');
+    } else if (this.age === 19) {
+        // gaining skill
+        this.increaseSkill('Swordsmanship');
+        this.increaseSkill('Horsemanship');
+        this.increaseSkill('Spear');
     }
     
     return this;

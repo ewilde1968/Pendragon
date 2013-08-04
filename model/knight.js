@@ -17,7 +17,7 @@ var KnightSchema = Character.schema.extend({
 KnightSchema.statics.factory = function (template, firstKnight) {
     "use strict";
     var result = new Knight(template);
-    result.initialize();
+    result.initialize(template);
 
     result.profession = 'Knight';
 
