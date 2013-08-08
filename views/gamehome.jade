@@ -158,8 +158,8 @@ block content
             p.holdingCost(data-sum='#{costSum}') Cost to run estate: #{costSum}£
             .taxLevel
               label(for='taxLevel') Taxes
-              input(type='range', name='taxLevel', max=12, value=6)
-              p 6£
+              input(type='range', name='taxLevel', max=12, value=#{holding.taxes})
+              p #{holding.taxes}£
             .population
               p.noncombatants Noncombatants #{holding.population.noncombatants}
               p.militia Militia #{holding.population.militia}
@@ -238,7 +238,7 @@ block content
         $('#settingsMenu').click(function () {showPage('#settingsPage'); });
 
         $('#turnCounter button').click(function () {
-            changesObj.turn = {year: #{game.turn.year}, quarter: '#{game.turn.quarter}'};
+            changesObj['turn'] = {year: #{game.turn.year}, quarter: '#{game.turn.quarter}'};
             $('#changes').val( JSON.stringify(changesObj));
             $('form').submit();
         });
