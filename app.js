@@ -2,15 +2,16 @@
 /**
  * Module dependencies.
  */
+/*global exports, require, module, process, __dirname, console */
+
 var express = require('express'),
     database = require('./model/database'),
     routes = require('./routes'),
     user = require('./routes/user'),
     game = require('./routes/game'),
     http = require('http'),
-    path = require('path');
-
-var app = express();
+    path = require('path'),
+    app = express();
 
 // all environments
 app.set('port', process.env.PORT || 3000);

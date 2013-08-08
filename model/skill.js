@@ -1,25 +1,30 @@
 /*
  * Skill model
 */
-var Skill, require, module, set_level; // forward to clear out JSLint errors
+/*global export, require, module */
+var Skill; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId;
 
+
+var levelValidator = function (val) {
+    "use strict";
+    if ('number' !== typeof val || val > 5 || val < 0) {
+        return false;
+    }
+
+    return true;
+};
+
+
 var SkillSchema = new Schema({
     name:           { type: String, required: true },
-    level:          { type: Number, set: set_level },
+    level:          { type: Number, set: levelValidator },
     experience:     Boolean
 });
 
-
-function set_level(val) {
-    "use strict";
-    if ('number' !== typeof val) {val = 0; } else if (val > 5) {val = 5; } else if (val < 0) {val = 0; }
-
-    return val;
-}
 
 SkillSchema.statics.factory = function (template) {
     "use strict";

@@ -1,7 +1,8 @@
 /*
  * Steward model
 */
-var Steward, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+var Steward; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     extend = require('mongoose-schema-extend'),

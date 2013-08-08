@@ -1,7 +1,9 @@
 /*
  * Family model
 */
-var Family, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+
+var Family; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
@@ -10,7 +12,7 @@ var mongoose = require('mongoose'),
     Character = require('./character'),
     Knight = require('./knight'),
     Steward = require('./steward'),
-    TimelineEvent = require('./timelineevent');
+    Storyline = require('./storyline');
 
 
 var FamilySchema = new Schema({
@@ -21,11 +23,11 @@ var FamilySchema = new Schema({
     specialty:      String,
     generosity:     Number,
     livingStandard: String,
-    queuedEvents:   [TimelineEvent.schema]
+    queuedEvents:   [Storyline.schema]
 });
 
 
-FamilySchema.statics.factory = function (template, settings) {
+FamilySchema.statics.factory = function (template, settings, cb) {
     "use strict";
     var result = new Family({name: template.name,
                              specialty: template.specialty || null,
@@ -47,9 +49,25 @@ FamilySchema.statics.factory = function (template, settings) {
     holding.addSteward(firstSteward);
     result.holdings.push(holding);
 
-    if (!result.specialty) {result.generateSpecialty(); }
+    result.generateSpecialty()
+        .fatherHistory();
+
+    if (cb) {cb(0, result); }
 
     return result;
+};
+
+FamilySchema.methods.fatherHistory = function () {
+    "use strict";
+    this.queuedEvents.push(Storyline.factory({
+        name: 'Father History',
+        title: 'Tragedy!',
+        message: "Your father died.",
+        actions: {log: true},
+        choices: [{label: 'Done'}]
+    }));
+
+    return this;
 };
 
 FamilySchema.methods.generateSpecialty = function () {
@@ -60,8 +78,11 @@ FamilySchema.methods.generateSpecialty = function () {
     return this;
 };
 
-FamilySchema.methods.mergeOptions = function (options) {
+FamilySchema.methods.mergeOptions = function (options, cb) {
     "use strict";
+    var counter = 0,
+        cbCalled = false;
+
     if (options && options.changes) {
         this.generosity = options.changes.generosity || this.generosity;
         this.livingStandard = options.changes.livingStyle || this.livingStandard;
@@ -73,18 +94,28 @@ FamilySchema.methods.mergeOptions = function (options) {
             }
         });
 
-        this.holdings.forEach(function (h) {
+        this.holdings.forEach(function (h, i, a) {
             if (options.changes[h.id]) {
-                h.mergeOptions(options.changes[h.id]);
+                counter += 1;
+                h.mergeOptions(options.changes[h.id], function () {
+                    counter -= 1;
+                    if (0 === counter && i === (a.length - 1) && cb) {
+                        cbCalled = true;
+                        cb();
+                    }
+                });
             }
         });
+        
+        if (0 === counter && cb && !cbCalled) {cb(); }
     }
     
     return this;
 };
 
-FamilySchema.methods.endQuarter = function () {
+FamilySchema.methods.endQuarter = function (turn) {
     "use strict";
+    this.clearEvents(turn);
     
     return this;
 };
@@ -109,49 +140,58 @@ FamilySchema.methods.satisfies = function (requirements) {
     return true;    // TODO
 };
 
-FamilySchema.methods.getEvents = function (turn, result) {
+FamilySchema.methods.clearEvents = function (turn) {
     "use strict";
-    this.members.forEach(function (m) {
-        m.getEvents(turn, result);  // null result means delete old events
-    });
+    var index;
     
-    this.holdings.forEach(function (h) {
-        h.getEvents(turn, result);
-    });
-
-    var qe = this.queuedEvents,
-        index,
-        e;
-    if (qe && qe.length > 0) {
-        for (index = 0; index < qe.length; index += 1) {
-            e = qe[index];
-            if ((!e.year || e.year === turn.year)
-                    && (!e.quarter || e.quarter === turn.quarter)
-                    && this.satisfies(e.requirements)) {
-                if (!result) {
-                    qe.splice(index, 1);
-                    index -= 1;
-                } else {
-                    result.push(e);
-                }
-            }
+    for (index = 0; index < this.queuedEvents.length; index += 1) {
+        // do not filter by satisfies for removing events
+        if (this.queuedEvents[index].filterByTurn(turn)) {
+            this.queuedEvents.splice(index, 1);
+            index -= 1;
         }
     }
-    
+
     return this;
+};
+
+FamilySchema.methods.getEvents = function (turn, result) {
+    "use strict";
+    // see which events match the current turn and return
+    // an array of all such Storyline objects
+    var that = this;
+    
+    if (!result) {
+        result = [];
+    }
+    
+    this.members.forEach(function (m) {m.getEvents(turn, result); });
+    this.holdings.forEach(function (h) {h.getEvents(turn, result); });
+
+    this.queuedEvents.forEach(function (e) {
+        if (e.filterByTurn(turn, that.satisfies)) {
+            result.push(e);
+        }
+    });
+    
+    return result;
 };
 
 FamilySchema.methods.winter = function (game) {
     "use strict";
     // Activities that occur in Winter:
     //      age each character a year
+    //      determine holding events
     this.members.forEach(function (m) {
         m.increaseAge();
         // TODO determine child births
         // TODO determine peasant population growth
         // TODO determine hatred fallout
-        // TODO determine holding events
         // TODO determine pentacost court plans
+    });
+
+    this.holdings.forEach(function (h) {
+        h.determineYearEvents();
     });
     
     return this;

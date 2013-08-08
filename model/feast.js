@@ -1,7 +1,9 @@
 /*
  * Feast model
 */
-var Feast, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+
+var Feast; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
@@ -9,23 +11,13 @@ var mongoose = require('mongoose'),
 
 var FeastSchema = new Schema({
     name:           { type: String, required: true },
-    cost:           Number,
-    hate:           Number,
-    season:         String,
-    message:        String,
-    results:        []
+    cost:           Number
 });
 
 
 FeastSchema.statics.factory = function (template) {
     "use strict";
-    var result = new Feast({name: template.name,
-                            cost: template.cost || 0,
-                            hate: template.hate || 0,
-                            season: template.season || null,
-                            message: template.message || '',
-                            results: template.results || null
-                           });
+    var result = new Feast(template);
     
     return result;
 };

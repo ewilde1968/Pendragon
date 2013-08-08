@@ -1,7 +1,8 @@
 /*
  * Squire model
 */
-var Squire, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+var Squire; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     extend = require('mongoose-schema-extend'),

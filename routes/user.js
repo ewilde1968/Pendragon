@@ -2,7 +2,7 @@
 /*
  * users routes
  */
-var exports, require, module; // forward to clear out JSLint errors
+/*global exports, require, module */
 
 var Account = require('./../model/account');
 

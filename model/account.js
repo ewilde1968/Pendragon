@@ -1,8 +1,9 @@
 /*
  * User model
 */
+/*global export, require, module */
 
-var Account, require, module; // forward to clear out JSLint errors
+var Account; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,

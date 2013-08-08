@@ -1,48 +1,61 @@
 /*
  * Game model
 */
-var Game, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+
+var Game; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     defaultObjects = require('./../model/defaultObjects'),
     Family = require('./family'),
-    TimelineEvent = require('./timelineevent');
+    Storyline = require('./storyline');
 
 var GameSchema = new Schema({
     owner:          { type: ObjectId, required: true },
     settings:       Object,
     families:       [Family.schema],
     turn:           { year: Number, quarter: String },
-    queuedEvents:   [TimelineEvent.schema]
+    queuedEvents:   [Storyline.schema]
 });
 
 
 GameSchema.statics.factory = function (settings, ownerId, cb) {
     "use strict";
-    var result = new Game({owner: ownerId,
+    var counter = 0,
+        result = new Game({owner: ownerId,
                            settings: settings,
                            turn: {year: 485, quarter: "Winter"}
                           });
 
-    defaultObjects.families.forEach(function (template) {
-        var f = Family.factory(template, settings);
-        if (settings.family === f.name) {
-            result.families.unshift(f);      // player is always the zeroeth element
-        } else {
-            result.families.push(f);
-        }
-    });
+    Storyline.find({year: result.turn.year,
+                    quarter: result.turn.quarter
+                   }, function (err, evs) {
+        if (err) {return err; }
+                       
+        evs.forEach(function (e) {
+            result.queuedEvents.push(e);
+        });
 
-    defaultObjects.timelineEvents.forEach(function (e) {
-        if (e.year === result.turn.year && e.quarter === result.turn.quarter
-                && result.satisfies(e.requirements)) {
-            result.queuedEvents.push(TimelineEvent.factory(e, result.queuedEvents));
-        }
-    });
+        defaultObjects.families.forEach(function (template) {
+            Family.factory(template, settings, function (err, f) {
+                if (err) {return err; }
 
-    result.update(cb);
+                if (settings.family === f.name) {
+                    result.families.unshift(f);      // player is always the zeroeth element
+                } else {
+                    result.families.push(f);
+                }
+                
+                counter += 1;
+                if (counter >= defaultObjects.families.length) {
+                    // done creating game object
+                    result.update(cb);
+                }
+            });
+        });
+    });
 
     return result;
 };
@@ -59,53 +72,55 @@ GameSchema.methods.satisfies = function (requirements) {
     return true;    // TODO
 };
 
-GameSchema.methods.getEvents = function (removeOld) {
+GameSchema.methods.clearEvents = function () {
     "use strict";
-    var result = removeOld ? null : [],
-        that = this,
-        qe = this.queuedEvents,
-        index,
-        e;
-
-    // add family events first
-    if (!removeOld) {
-        this.families[0].getEvents(this.turn, result);  // only add events for the player's family
-    } else {
-        this.families.forEach(function (f) {f.getEvents(that.turn, result); });
-    }
-
-    // add timeline events
-    if (qe && qe.length > 0) {
-        for (index = 0; index < qe.length; index += 1) {
-            e = qe[index];
-            if ((!e.year || e.year === this.turn.year)
-                    && (!e.quarter || e.quarter === this.turn.quarter)
-                    && this.satisfies(e.requirements)) {
-                if (!result) {
-                    qe.splice(index, 1);
-                    index -= 1;
-                } else {
-                    result.push(e);
-                }
-            }
+    var index;
+    
+    for (index = 0; index < this.queuedEvents.length; index += 1) {
+        // do not filter by satisfies for removing events
+        if (this.queuedEvents[index].filterByTurn(this.turn)) {
+            this.queuedEvents.splice(index, 1);
+            index -= 1;
         }
     }
 
-    return result;
+    return this;
 };
 
-GameSchema.methods.mergeOptions = function (options) {
+GameSchema.methods.getEvents = function (cb) {
     "use strict";
-    this.families[0].mergeOptions(options);
+    // see which events match the current turn and return
+    // an array of all such Storyline objects
+    var that = this,
+        result = [];
+
+    // only get events for the player's family
+    this.families[0].getEvents(that.turn, result);
     
+    this.queuedEvents.forEach(function (e) {
+        if (e.filterByTurn(that.turn, that.satisfies)) {
+            result.push(e);
+        }
+    });
+    
+    if (cb) {cb(result); }
+    
+    return this;
+};
+
+GameSchema.methods.mergeOptions = function (options, cb) {
+    "use strict";
+    this.families[0].mergeOptions(options, cb);
+
     return this;
 };
 
 GameSchema.methods.endQuarter = function () {
     "use strict";
-    this.getEvents(true);   // throw out the old events
-
-    this.families.forEach(function (f) {f.endQuarter(); });
+    var that = this;
+    
+    this.clearEvents();
+    this.families.forEach(function (f) {f.endQuarter(that.turn); });
     
     return this;
 };
@@ -116,7 +131,7 @@ GameSchema.methods.winter = function () {
     //      age each character a year
         // TODO determine peasant population growth
         // TODO determine hatred fallout
-        // TODO determine holding events
+    //      determine holding events
         // TODO determine pentacost court plans
     var that = this;
     this.families.forEach(function (f) {

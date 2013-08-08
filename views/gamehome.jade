@@ -5,6 +5,14 @@ block content
   - var skillDescriptionsA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'];
   - var statDescriptionsA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'];
   - var honorDescriptionsA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
+  mixin addSubeventDiv(se)
+    .subEventDetailPage(class='notShown', data-action='#{se.actions}', id='#{se.id}')
+      p #{se.title}
+      p #{se.message}
+      each o in se.choices
+        button.eventDetailOption(data-id='#{o.id}') #{o.label}
+    each o in se.choices
+      mixin addSubeventDiv(o)
 
   if turnOnMenu
     script.
@@ -200,20 +208,13 @@ block content
         ul.listgroup
   if events
     each ev in events
-      if ev.isChild
-        .subEventDetailPage(class='notShown', id='#{ev.id}')
-          p #{ev.title}
-          p #{ev.message}
-          each o in ev.results
-            button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
-      else
-        .eventDetailPage(class='notShown', id='#{ev.id}')
-          p #{ev.title}
-          p #{ev.message}
-          each o in ev.results
-            if o.action
-              button.eventDetailOption(data-action='#{o.action}', data-key='#{o.key}', data-value='#{o.value}') #{o.label}
-
+      .eventDetailPage(class='notShown', data-action='#{ev.actions}', id='#{ev.id}')
+        p #{ev.title}
+        p #{ev.message}
+        each o in ev.choices
+          button.eventDetailOption(data-id='#{o.id}') #{o.label}
+      each e in ev.choices
+        mixin addSubeventDiv(e)
   if turnOnMenu
     script.
       $(document).ready(function () {
@@ -237,6 +238,7 @@ block content
         $('#settingsMenu').click(function () {showPage('#settingsPage'); });
 
         $('#turnCounter button').click(function () {
+            changesObj.turn = {year: #{game.turn.year}, quarter: '#{game.turn.quarter}'};
             $('#changes').val( JSON.stringify(changesObj));
             $('form').submit();
         });
@@ -340,25 +342,79 @@ block content
         // *******************************************
         // characterDetailPage
         // *******************************************
+        var changeStat = function (stat, changeVal) {
+            var spanE = $('#' + '#{game.families[0].members[0].id} .' + stat + ' .statValue'),
+                val = spanE.data('value') + changeVal,
+                cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
+                descs = (stat === 'honor') ? honorDescA : statDescA;
+
+            if (val < 0) {val = 0; }
+
+            if (val >= descs.length) {val = descs.length - 1; }
+            spanE.text(descs[val]);
+            spanE.data('value', val);
+
+            cObj[stat] = val;
+            changesObj['#{game.families[0].members[0].id}'] = cObj;
+        };
+        
 
         // *******************************************
         // eventDetailPage
         // *******************************************
+        var performAction = function (ev) {
+            var action = ev.data('action');
+            if (action && action != 'undefined') {
+                for (prop in action) {
+                    if (action.hasOwnProperty(prop)) {
+                        switch (prop) {
+                            case 'experience':
+                                var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
+                                    expObj = cObj['experience'] || new Array();
+
+                                if (expObj.indexOf(action[prop]) == -1) {expObj.push(action[prop]); }
+
+                                cObj['experience'] = expObj;
+                                changesObj['#{game.families[0].members[0].id}'] = cObj;
+                                break;
+                            case 'honor':
+                                changeStat( prop, action[prop]);
+                                break;
+                            case 'cash':
+                                var cObj = changesObj['cash'] || new Object();
+
+                                cash += action[prop];
+
+                                cObj = cash;
+                                changesObj.cash = cash;
+                                break;
+                            case 'log':
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+        };
+
         var eventShown = null;
         var showEvent = function (eventToShow) {
             if (eventShown != eventToShow) {
-                if( eventShown)
+                if( eventShown) {
                     $(eventShown).addClass('notShown');
+                }
                 eventShown = eventToShow;
-                if( eventShown)
+                if (eventShown) {
                     $(eventShown).removeClass('notShown');
+                    performAction($(eventShown));
+                }
             }
         };          
 
         var nextEvent = function () {
             var evs = $('.eventDetailPage');
             if (evs && evs.length > 0) {
-                showEvent('#' + evs[0].id);
+                showEvent($('#' + evs[0].id))
                 $('#sidebar button').attr('disabled', true);
             } else {
                 calculateResources();
@@ -368,63 +424,17 @@ block content
         };
 
         $('.eventDetailOption').click(function (ev) {
+            var dataId = $(this).data('id'),
+                subevent = $('#' + dataId),
+                subbuttons = $('#' + dataId + ' button');
+            
             ev.preventDefault();
-
             $(this).parent().remove();
-
-            switch ($(this).data('action')) {
-            case 'next':
-                showEvent('#' + $(this).data('value'));
-                break;
-            case 'experience':
-                var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
-                    expObj = cObj['experience'] || new Array(),
-                    key = $(this).data('key');
-
-                if (expObj.indexOf(key) == -1) {expObj.push(key); }
-
-                cObj['experience'] = expObj;
-                changesObj['#{game.families[0].members[0].id}'] = cObj;
-
+            
+            if (subevent && subevent.length === 1 && subbuttons && subbuttons.length > 0) {
+                showEvent(subevent);
+            } else {
                 nextEvent();
-                break;
-            case 'statChange':
-                var key = $(this).data('key'),
-                    spanE = $('#' + '#{game.families[0].members[0].id} .' + key + ' .statValue'),
-                    val = spanE.data('value'),
-                    cObj = changesObj['#{game.families[0].members[0].id}'] || new Object();
-
-                val += $(this).data('value');
-                if (val < 0) {val = 0; }
-
-                if (key === 'honor') {
-                    if (val >= #{honorDescriptionsA.length}) {val = #{honorDescriptionsA.length} - 1; }
-                    spanE.text(honorDescA[val]);
-                } else {
-                    if (val >= #{statDescriptionsA.length}) {val = #{statDescriptionsA.length} - 1; }
-                    spanE.text(statDescA[val]);
-                }
-                spanE.data('value', val);
-
-                cObj[key] = val;
-                changesObj['#{game.families[0].members[0].id}'] = cObj;
-
-                nextEvent();
-                break;
-            case 'cash':
-                var cObj = changesObj['cash'] || new Object();
-
-                cash += $(this).data('value');
-
-                cObj = cash;
-                changesObj.cash = cash;
-                
-                nextEvent();
-                break;
-            case 'log':
-            default:
-                nextEvent();
-                break;
             }
         });
 

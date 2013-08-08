@@ -1,13 +1,15 @@
 /*
  * Character model
 */
-var Character, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+
+var Character; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     Skill = require('./skill'),
-    TimelineEvent = require('./timelineevent');
+    Storyline = require('./storyline');
 
 
 var decreptitudeYear = [];
@@ -33,7 +35,7 @@ var CharacterSchema = new Schema({
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
     parents:        [ObjectId],
-    queuedEvents:   [TimelineEvent.schema]
+    queuedEvents:   [Storyline.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
 
 
@@ -103,43 +105,43 @@ CharacterSchema.methods.generateStats = function () {
     return this;
 };
 
-
-CharacterSchema.methods.fatherHistory = function () {
-    "use strict";
-    return new TimelineEvent({
-        title: 'Tragedy!',
-        message: "Your father died.",
-        results: [{label: 'Done', action: 'log'}]
-    });
-};
-
 CharacterSchema.methods.satisfies = function (requirements) {
     "use strict";
     return true;    // TODO
 };
 
-CharacterSchema.methods.getEvents = function (turn, result) {
+CharacterSchema.methods.clearEvents = function (turn) {
     "use strict";
-    var index,
-        e;
-
-    if (this.queuedEvents && this.queuedEvents.length > 0) {
-        for (index = 0; index < this.queuedEvents.length; index += 1) {
-            e = this.queuedEvents[index];
-            if ((!e.year || e.year === turn.year)
-                    && (!e.quarter || e.quarter === turn.quarter)
-                    && this.satisfies(e.requirements)) {
-                if (!result) {
-                    this.queuedEvents.splice(index, 1);
-                    index -= 1;
-                } else {
-                    result.push(e);
-                }
-            }
+    var index;
+    
+    for (index = 0; index < this.queuedEvents.length; index += 1) {
+        // do not filter by satisfies for removing events
+        if (this.queuedEvents[index].filterByTurn(turn)) {
+            this.queuedEvents.splice(index, 1);
+            index -= 1;
         }
     }
-    
+
     return this;
+};
+
+CharacterSchema.methods.getEvents = function (turn, result) {
+    "use strict";
+    // see which events match the current turn and return
+    // an array of all such Storyline objects
+    var that = this;
+    
+    if (!result) {
+        result = [];
+    }
+    
+    this.queuedEvents.forEach(function (e) {
+        if (e.filterByTurn(turn, that.satisfies)) {
+            result.push(e);
+        }
+    });
+    
+    return result;
 };
 
 CharacterSchema.methods.mergeOptions = function (options) {
@@ -195,6 +197,14 @@ CharacterSchema.methods.increaseSkill = function (name, value) {
     });
     
     return this;
+};
+
+CharacterSchema.methods.getSkill = function (name) {
+    "use strict";
+    var result = null;
+    this.skills.forEach(function (s) {if (name === s.name) {result = s; } });
+    
+    return result;
 };
 
 

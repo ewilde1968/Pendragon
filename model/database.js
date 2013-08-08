@@ -2,11 +2,14 @@
 /*
  * Database mdoel
  */
-var Database, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+
+var Database; // forward to clear out JSLint errors
 
 
 var mongoose = require('mongoose'),
-    defaultObjects = require('./defaultObjects');
+    defaultObjects = require('./defaultObjects'),
+    Storyline = require('./storyline');
 
 var connected = false;
 var database = function (databaseName) {
@@ -31,7 +34,23 @@ var database = function (databaseName) {
         // Use database when:
         //    - Object is created regularly from template (leverage database cache)
         //    - Object is difficult to find when walking through defaultObjects
-        
+
+        Storyline.findOne({name: 'Intro'}, function (err, doc) {
+            if (err) {return err; }
+            
+            if (!doc) {
+                // Items in the database include:
+                //    - events for investments
+                var eventTree = [];
+                defaultObjects.eventTree.forEach(function (e) {
+                    eventTree.push(Storyline.factory(e));
+                });
+                Storyline.create(eventTree, function (err) {
+                    if (err) {return err; }
+                });
+            }
+        });
+
         return that;
     };
     

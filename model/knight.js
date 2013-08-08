@@ -1,7 +1,8 @@
 /*
  * Knight model
 */
-var Knight, require, module; // forward to clear out JSLint errors
+/*global export, require, module */
+var Knight; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     extend = require('mongoose-schema-extend'),
