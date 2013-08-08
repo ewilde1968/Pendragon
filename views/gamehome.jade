@@ -87,13 +87,13 @@ block content
               p #{member.profession}
       #mapPage(class='notShown')
       #courtPage(class='notShown')
-        if game.turn.quarter == 'Winter'
+        if game.turn.quarter === 'Winter'
           p No Winter Court
-        if game.turn.quarter == 'Spring'
+        if game.turn.quarter === 'Spring'
           p Pentacost Court
-        if game.turn.quarter == 'Summer'
+        if game.turn.quarter === 'Summer'
           p No Summer Court
-        if game.turn.quarter == 'Fall'
+        if game.turn.quarter === 'Fall'
           p Christmas Court
       #historyPage(class='notShown')
       each member in game.families[0].members
@@ -135,7 +135,7 @@ block content
               p Steward
               button.memberDetailButton(data-id='#{holding.steward}')
                 each member in game.families[0].members
-                  if member.id == holding.steward
+                  if member.id === holding.steward
                     p #{member.name}
                     - var foundStewardSkill = null;
                     each skill in member.skills
@@ -223,7 +223,7 @@ block content
         // *******************************************
         var pageShown = '#expendituresPage';
         var showPage = function (pageToShow) {
-            if (pageShown != pageToShow) {
+            if (pageShown !== pageToShow) {
                 $(pageShown).addClass('notShown');
                 pageShown = pageToShow;
                 $(pageShown).removeClass('notShown');
@@ -364,7 +364,7 @@ block content
         // *******************************************
         var performAction = function (ev) {
             var action = ev.data('action');
-            if (action && action != 'undefined') {
+            if (action && action !== 'undefined') {
                 for (prop in action) {
                     if (action.hasOwnProperty(prop)) {
                         switch (prop) {
@@ -372,7 +372,7 @@ block content
                                 var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
                                     expObj = cObj['experience'] || new Array();
 
-                                if (expObj.indexOf(action[prop]) == -1) {expObj.push(action[prop]); }
+                                if (expObj.indexOf(action[prop]) === -1) {expObj.push(action[prop]); }
 
                                 cObj['experience'] = expObj;
                                 changesObj['#{game.families[0].members[0].id}'] = cObj;
@@ -399,7 +399,7 @@ block content
 
         var eventShown = null;
         var showEvent = function (eventToShow) {
-            if (eventShown != eventToShow) {
+            if (eventShown !== eventToShow) {
                 if( eventShown) {
                     $(eventShown).addClass('notShown');
                 }
@@ -600,13 +600,14 @@ block content
         // initial setup
         // *******************************************
         calculateResources();
-        if ('#{game.turn.quarter}' != 'Winter') {
+        if ('#{game.turn.quarter}' !== 'Winter') {
             $('#livingStyle').attr('disabled', true);
             $('#generosity input').attr('disabled', true);
             $('.makeInvestment').attr('disabled', true);
             $('.trainPopulation').attr('disabled', true);
             $('.taxLevel input').attr('disabled', true);
             $('.changeSteward').attr('disabled', true);
+            $('.holdFestival').attr('disabled', true);
         }
         nextEvent();
       });

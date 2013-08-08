@@ -38,7 +38,7 @@ block content
             }
 
             obj = $('input[name="verifyPassword"]');
-            if (obj.val() != x) {
+            if (obj.val() !== x) {
                 good = false;
                 obj.addClass('inputError');
             } else {
