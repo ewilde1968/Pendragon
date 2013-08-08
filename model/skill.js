@@ -21,7 +21,7 @@ var levelValidator = function (val) {
 
 var SkillSchema = new Schema({
     name:           { type: String, required: true },
-    level:          { type: Number, set: levelValidator },
+    level:          { type: Number, validator: levelValidator },
     experience:     Boolean
 });
 

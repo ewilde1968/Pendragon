@@ -135,7 +135,7 @@ block content
               p Steward
               button.memberDetailButton(data-id='#{holding.steward}')
                 each member in game.families[0].members
-                  if member.id === holding.steward
+                  if member.id == holding.steward
                     p #{member.name}
                     - var foundStewardSkill = null;
                     each skill in member.skills
