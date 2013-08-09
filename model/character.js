@@ -207,6 +207,34 @@ CharacterSchema.methods.getSkill = function (name) {
     return result;
 };
 
+CharacterSchema.methods.cost = function (livingStandard) {
+    "use strict";
+    // ladies and squires are free
+    // stewards count against their holding's costs
+    
+    // TODO not calling Knight's cost function?
+    // See https://github.com/briankircho/mongoose-schema-extend/issues/11
+    if (this.profession === 'Knight') {
+        switch (livingStandard) {
+        case 'Poor':
+            return 1;
+        case 'Normal':
+            return 4;
+        case 'Rich':
+            return 8;
+        case 'Opulent':
+            return 12;
+        default:
+            throw {
+                name: 'Invalid living standard',
+                message: 'CharacterSchema.methods.cost for ' + this.name
+            };
+        }
+    }
+
+    return 0;
+};
+
 CharacterSchema.methods.doSeason = function (game, cb) {
     "use strict";
     switch (game.turn.quarter) {
@@ -220,7 +248,10 @@ CharacterSchema.methods.doSeason = function (game, cb) {
         if (cb) {cb(); }
         break;
     case "Fall":
+        // age each character a year
         this.increaseAge();
+
+        // experience checks for all family members
         this.skills.forEach(function (s) {s.experienceCheck(); });
         if (cb) {cb(); }
         break;

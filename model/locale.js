@@ -10,11 +10,14 @@ var mongoose = require('mongoose'),
     Investment = require('./investment'),
     Feast = require('./feast'),
     Storyline = require('./storyline'),
+    Character = require('./character'),
+    Skill = require('./skill'),
     defaultObjects = require('./defaultObjects');
 
 var LocaleSchema = new Schema({
     name:           { type: String, required: true },
-    income:         Number,
+    projIncome:     Number,
+    harvests:       [{result: String, income: Number}],   // keep 5 years of harvest records for population growth
     cost:           Number,
     steward:        ObjectId,
     investments:    [Investment.schema],
@@ -31,7 +34,7 @@ var LocaleSchema = new Schema({
 LocaleSchema.statics.factory = function (template) {
     "use strict";
     var result = new Locale({name: template.name,
-                             income: template.income || 6,
+                             projIncome: template.projIncome || 6,
                              cost: 1,
                              taxes: template.taxes || 6,
                              population: template.population ||
@@ -72,7 +75,9 @@ LocaleSchema.methods.addInvestment = function (invest, prebuilt) {
 
 LocaleSchema.methods.addSteward = function (s) {
     "use strict";
-    if (this.steward) {this.cost -= 1; }
+    if (this.steward && this.steward.profession === 'Steward') {
+        this.cost -= 1;
+    }
 
     if (s) {
         this.steward = s.id;
@@ -109,13 +114,14 @@ LocaleSchema.methods.addFeast = function (f, cb) {
 
 LocaleSchema.methods.mergeOptions = function (options, cb) {
     "use strict";
+    var useCB = true;
+
     if (options) {
         if (options.build) {
-            this.addInvestment(options.build, false);
+            this.addInvestment(options.build.name, false);
         }
         
         if (options.tax) {
-            this.income = this.income - this.taxes + options.tax;
             this.taxes = options.tax;
         }
         
@@ -126,10 +132,15 @@ LocaleSchema.methods.mergeOptions = function (options, cb) {
                          };
         }
         
-        this.addFeast(options.festival, function () {
-            if (cb) {cb(); }
-        });
-    } else if (cb) {
+        if (options.festival) {
+            useCB = false;
+            this.addFeast(options.festival, function () {
+                if (cb) {cb(); }
+            });
+        }
+    }
+    
+    if (useCB && cb) {
         cb();
     }
     
@@ -193,10 +204,56 @@ LocaleSchema.methods.determineYearEvents = function (cb) {
     if (this.investments === 0) {cb(); }
 };
 
+LocaleSchema.methods.calculateHarvest = function (cb) {
+    "use strict";
+    var that = this,
+        d3 = function () {return Math.floor(Math.random() * 3); },
+        d2 = function () {return Math.floor(Math.random() * 2); },
+        steward = that.steward ? that.parent().members.id(that.steward) : null,
+        stewardry = steward ? steward.getSkill('Stewardry') : null,
+        weather = Skill.factory({name: 'Weather', level: d3() + d3() + d2()}),
+        check = stewardry ? stewardry.opposed(weather) : 'Fumble',
+        result;
+
+    switch (check) {
+    case 'Critical Success':
+        result = this.taxes * 2;
+        break;
+    case 'Success':
+        result = this.taxes;
+        break;
+    case 'Failure':
+        result = Math.floor(that.taxes / 2);
+        break;
+    case 'Fumble':
+        result = Math.floor(that.taxes / 4);
+        break;
+    default:
+        throw {
+            name: 'Invalid harvest check',
+            message: check
+        };
+    }
+    
+    if (that.harvests.length >= 5) {
+        that.harvests.pop();    // throw away harvest results after five years
+    }
+    that.harvests.unshift({result: check, income: result - that.cost});
+            
+    if (cb) {cb(stewardry); }
+
+    return this;
+};
+
 LocaleSchema.methods.doSeason = function (game, cb) {
     "use strict";
+    var that = this;
+    
     switch (game.turn.quarter) {
     case "Winter":
+        // TODO determine peasant population growth
+        // TODO determine hatred fallout
+        // determine holding events
         this.determineYearEvents(function () {
             if (cb) {cb(); }
         });
@@ -208,7 +265,29 @@ LocaleSchema.methods.doSeason = function (game, cb) {
         if (cb) {cb(); }
         break;
     case "Fall":
-        if (cb) {cb(); }
+        // determine harvest results
+        this.calculateHarvest(function (stewardry) {
+            that.projIncome = that.taxes;
+            that.investments.forEach(function (i) {
+                // determine this year's investment income
+                if (i.built && !i.damaged && i.income) {
+                    that.harvests[0].income += i.harvest(stewardry);
+                }
+                // determine investment completions
+                if (!i.built) {
+                    i.built = true;
+                    that.cost += i.maintenance;
+                }
+
+                // determine next year's projected income
+                if (i.built && !i.damaged && i.income) {
+                    that.projIncome += i.income;
+                }
+            });
+
+            // TODO determine training results
+            if (cb) {cb(); }
+        });
         break;
     default:
         break;

@@ -137,7 +137,7 @@ GameSchema.methods.nextTurn = function (cb) {
     case 'Winter':
         // TODO determine peasant population growth
         // TODO determine hatred fallout
-        //      determine holding events
+        // determine holding events
         // TODO determine pentacost court plans
         nextSeason = 'Spring';
         break;
@@ -156,8 +156,9 @@ GameSchema.methods.nextTurn = function (cb) {
         nextSeason = 'Fall';
         break;
     case 'Fall':
-        //      age each character a year
+        // age each character a year
         // determine harvest results
+        // determine next year's projected income
         // TODO determine investment completions
         // TODO determine training results
         // experience checks for all family members

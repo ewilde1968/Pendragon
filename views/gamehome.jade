@@ -54,10 +54,11 @@ block content
   #content
     if turnOnMenu
       #resources
-        p calculating...
+        p#cashOnHand Cash #{game.families[0].cash}£
+        p#projectedIncome calculating...
+        p#projectedCost calculating...
         #resourcesProgress
           div
-        p#remainingResources calculating...
       formUrl = '/user/' + accountId + '/game/' + gameId
       form.notShown( action=formUrl, method="POST")
         input#changes(type='text', name='changes', value='')
@@ -77,7 +78,7 @@ block content
             .holdingSummary
               button.holdingDetailButton(data-id='#{holding.id}', class='#{holding.id}')
                 p.holdingName #{holding.name}
-                p.holdingIncome Income: #{holding.income}£
+                p.holdingProjIncome Projected Income: #{holding.projIncome}£
                 p.holdingCost Cost: #{holding.cost}£
       #charactersPage(class='notShown')
         #characters
@@ -128,7 +129,7 @@ block content
                 else
                   p.armor #{member.armor}
       each holding in game.families[0].holdings
-        .holdingDetailPage(class='notShown', id='#{holding.id}', data-income='#{holding.income}')
+        .holdingDetailPage(class='notShown', id='#{holding.id}', data-projincome='#{holding.projIncome}')
           .statsView
             p.holdingName #{holding.name}
             .holdingSteward
@@ -147,15 +148,17 @@ block content
                       p Stewardry: Untrained
               button.changeSteward Change Steward
             .investments
-              - var sum = 0, costSum = holding.cost;
+              - var sum = 0;
               each investment in holding.investments
-                - var c = investment.built ? 'built' : 'notbuilt' + investment.damaged ? 'damaged' : '';
-                - sum += investment.income;
-                - costSum += investment.maintenance;
+                if investment.built
+                  - var c = 'built' + investment.damaged ? ' damaged' : '';
+                  - sum += investment.damaged ? 0 : investment.income;
+                else
+                  - var c = 'notbuilt' + investment.damaged ? ' damaged' : '';
                 p(class=c) #{investment.name}
               p.investmentIncome(data-sum='#{sum}') Investment Income: #{sum}£
               button.makeInvestment Make Investment
-            p.holdingCost(data-sum='#{costSum}') Cost to run estate: #{costSum}£
+            p.holdingCost(data-sum='#{holding.cost}') Cost to run estate: #{holding.cost}£
             .taxLevel
               label(for='taxLevel') Taxes
               input(type='range', name='taxLevel', max=12, value=#{holding.taxes})
@@ -267,29 +270,28 @@ block content
             }
 
             $('.holdingDetailPage .holdingCost').each(function () {spent+=$(this).data('sum'); });
+            $('#projectedCost').text('Projected Cost ' + spent + '£');
 
             return spent;
         };
 
         var calculateIncome = function () {
-            var result = cash;
-            $('.holdingDetailPage').each( function () {result+=$(this).data('income'); });
-            $('#resources p').text('Resources ' + result + '£');
+            var result = 0;
+            $('.holdingDetailPage').each( function () {result+=$(this).data('projincome'); });
+            $('#projectedIncome').text('Projected Income ' + result + '£');
             $('#generosity input').attr('max', result);
             return result;
         };
 
         var calculateResources = function () {
             var spent = calculateSpent(),
-                have = calculateIncome(),
+                have = calculateIncome() + cash,
                 progress = $('#resourcesProgress div');
 
             if (spent > have) {
                 progress.addClass('inDebt');
-                $('#remainingResources').text('-' + (spent - have) + '£');
             } else {
                 progress.removeClass('inDebt');
-                $('#remainingResources').text((have - spent) + '£');
             }
 
             var val = Math.floor(Math.abs(have - spent) * 100 / 12);
@@ -387,6 +389,8 @@ block content
 
                                 cObj = cash;
                                 changesObj.cash = cash;
+                                
+                                $('#cashOnHand').text( 'Cash ' + cash + '£');
                                 break;
                             case 'log':
                             default:
@@ -557,8 +561,8 @@ block content
                 hObj = changesObj[id] || new Object();
 
             $('.taxLevel p').text(val + '£');
-            $('.' + id + ' .holdingIncome').text( 'Income: ' + total + '£');
-            pg.data('income',total);
+            $('.' + id + ' .holdingProjIncome').text( 'Projected Income: ' + total + '£');
+            pg.data('projincome',total);
 
             hObj.tax = val;
             changesObj[id] = hObj;

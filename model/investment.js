@@ -8,7 +8,8 @@ var Investment; // forward to clear out JSLint errors
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Storyline = require('./storyline');
+    Storyline = require('./storyline'),
+    Skill = require('./skill');
 
 var InvestmentSchema = new Schema({
     name:           { type: String, required: true },
@@ -50,7 +51,7 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
     if (this.built) {
         luck = Math.floor(Math.random() * 20);
 
-        if (/*luck === 0 && */this.goodEvents && this.goodEvents.length > 0) {
+        if (luck === 0 && this.goodEvents && this.goodEvents.length > 0) {
             eventList = this.goodEvents;
         } else if (luck === 19 && this.badEvents && this.badEvents.length > 0) {
             eventList = this.badEvents;
@@ -73,27 +74,36 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
     return this;
 };
 
-InvestmentSchema.methods.harvest = function (steward, eventQueue) {
+InvestmentSchema.methods.harvest = function (stewardry) {
     "use strict";
-    var result = -this.cost,
-        luck = Math.floor(Math.random() * 20),
-        d6 = function () {return Math.floor(Math.random() * 6); },
-        weather = d6() + d6() + d6() + 5,
-        harvest;
+    var d3 = function () {return Math.floor(Math.random() * 3); },
+        d2 = function () {return Math.floor(Math.random() * 2); },
+        weather = Skill.factory({name: 'Weather', level: d3() + d3() + d2()}),
+        check = stewardry.opposed(weather),
+        result = 0;
     
-    if (this.built) {
-        harvest = luck + steward.getSkill('Stewardry').level * 2 - weather;
-        if (harvest >= 10) {
-            result += this.income * 2;      // critical success
-        } else if (harvest >= 0) {
-            result += this.income;          // normal success
-        } else if (harvest >= -10) {
-            result += this.income / 2;      // normal failure, critical failure = no income
+    if (this.built && !this.damaged) {
+        switch (check) {
+        case 'Critical Success':
+            result = this.income * 2;
+            break;
+        case 'Success':
+            result = this.income;
+            break;
+        case 'Failure':
+            result = Math.floor(this.income / 2);
+            break;
+        case 'Fumble':
+            result = Math.floor(this.income / 4);
+            break;
+        default:
+            throw {
+                name: 'Invalid investment harvest check',
+                message: check
+            };
         }
-
-        result -= this.maintenance;
     }
-    
+        
     return result;
 };
 

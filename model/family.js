@@ -80,7 +80,8 @@ FamilySchema.methods.generateSpecialty = function () {
 
 FamilySchema.methods.mergeOptions = function (options, cb) {
     "use strict";
-    var counter = 0,
+    var that = this,
+        counter = 0,
         cbCalled = false;
 
     if (options && options.changes) {
@@ -98,6 +99,12 @@ FamilySchema.methods.mergeOptions = function (options, cb) {
             if (options.changes[h.id]) {
                 counter += 1;
                 h.mergeOptions(options.changes[h.id], function () {
+                    // remove cash for building investments at the family level
+                    // even if option to build fails, up front cost is sunk into investment
+                    if (options.changes[h.id].build) {
+                        that.cash -= options.changes[h.id].build.cost;
+                    }
+                    
                     counter -= 1;
                     if (0 === counter && i === (a.length - 1) && cb) {
                         cbCalled = true;
@@ -179,7 +186,8 @@ FamilySchema.methods.getEvents = function (turn, result) {
 
 FamilySchema.methods.doSeason = function (game, cb) {
     "use strict";
-    var doneMember = this.members.length === 0,
+    var that = this,
+        doneMember = this.members.length === 0,
         counterMember = 0,
         mL = this.members.length,
         doneHoldings = this.holdings.length === 0,
@@ -191,6 +199,23 @@ FamilySchema.methods.doSeason = function (game, cb) {
     this.members.forEach(function (m) {
         m.doSeason(game, function () {
             // must make sure this callback is called for every member
+            switch (game.turn.quarter) {
+            case 'Winter':
+                break;
+            case 'Spring':
+                break;
+            case 'Summer':
+                break;
+            case 'Fall':
+                that.cash -= m.cost(that.livingStandard);
+                break;
+            default:
+                throw {
+                    name: 'Invalid Season',
+                    message: 'FamilySchema.methods.doSeason'
+                };
+            }
+            
             counterMember += 1;
             if (cb && counterMember === mL) {
                 doneMember = true;
@@ -202,6 +227,23 @@ FamilySchema.methods.doSeason = function (game, cb) {
     this.holdings.forEach(function (h) {
         h.doSeason(game, function () {
             // must make sure this callback is called for every holding
+            switch (game.turn.quarter) {
+            case 'Winter':
+                break;
+            case 'Spring':
+                break;
+            case 'Summer':
+                break;
+            case 'Fall':
+                that.cash += h.harvests[0].income;
+                break;
+            default:
+                throw {
+                    name: 'Invalid Season',
+                    message: 'FamilySchema.methods.doSeason'
+                };
+            }
+            
             counterHolding += 1;
             if (cb && counterHolding === mH) {
                 doneHoldings = true;

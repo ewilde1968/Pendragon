@@ -36,6 +36,25 @@ KnightSchema.statics.factory = function (template, firstKnight) {
     return result;
 };
 
+KnightSchema.methods.cost = function (l) {
+    "use strict";
+    switch (l) {
+    case 'Poor':
+        return 1;
+    case 'Normal':
+        return 4;
+    case 'Rich':
+        return 8;
+    case 'Opulent':
+        return 12;
+    default:
+        throw {
+            name: 'Invalid living standard',
+            message: 'CharacterSchema.methods.cost for ' + this.name
+        };
+    }
+};
+
 
 var Knight = mongoose.model('Knight', KnightSchema);
 module.exports = Knight;

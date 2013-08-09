@@ -9,6 +9,6 @@
     "express": "3.2.4",
     "mongoose": "*",
     "jade": "*",
-    "mongoose-scema-extend": "*"
+    "mongoose-schema-extend": "0.1.4"
   }
 }

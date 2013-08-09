@@ -6,6 +6,7 @@
 
 var express = require('express'),
     database = require('./model/database'),
+    extend = require('mongoose-schema-extend'),
     routes = require('./routes'),
     user = require('./routes/user'),
     game = require('./routes/game'),
