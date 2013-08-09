@@ -17,8 +17,8 @@ var InvestmentSchema = new Schema({
     maintenance:    Number,
     defense:        Number,
     hate:           Number,
-    goodEvents:     [Storyline.schema],
-    badEvents:      [Storyline.schema],
+    goodEvents:     [String],
+    badEvents:      [String],
     built:          Boolean,
     damaged:        Boolean
 });
@@ -36,18 +36,21 @@ InvestmentSchema.statics.factory = function (template) {
                                  damaged: template.damaged || false
                                 });
     
+    template.goodEvents.forEach(function (ge) {result.goodEvents.push(ge); });
+    
     return result;
 };
 
 InvestmentSchema.methods.determineYearEvents = function (cb) {
     "use strict";
     var luck,
-        eventList = null;
+        eventList = null,
+        eventName;
     
     if (this.built) {
         luck = Math.floor(Math.random() * 20);
 
-        if (luck === 0 && this.goodEvents && this.goodEvents.length > 0) {
+        if (/*luck === 0 && */this.goodEvents && this.goodEvents.length > 0) {
             eventList = this.goodEvents;
         } else if (luck === 19 && this.badEvents && this.badEvents.length > 0) {
             eventList = this.badEvents;
@@ -57,11 +60,16 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
             Storyline.findOne({name: eventList[Math.floor(Math.random() * eventList.length)]},
                               function (err, ev) {
                     if (err) {return err; }
-                    if (cb) {cb(err, Storyline.factory(ev)); }
+                    if (cb) {cb(ev); }
                 });
+            
+            // return now so that the callback isn't called too early
+            return this;
         }
     }
 
+    if (cb) {cb(); }
+    
     return this;
 };
 

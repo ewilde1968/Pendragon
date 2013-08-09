@@ -110,7 +110,7 @@ GameSchema.methods.getEvents = function (cb) {
 
 GameSchema.methods.mergeOptions = function (options, cb) {
     "use strict";
-    this.families[0].mergeOptions(options, cb);
+    this.families[0].mergeOptions(options, cb); // callback called through families
 
     return this;
 };
@@ -125,7 +125,7 @@ GameSchema.methods.endQuarter = function () {
     return this;
 };
 
-GameSchema.methods.winter = function () {
+GameSchema.methods.winter = function (cb) {
     "use strict";
     // Activities that occur in Winter:
     //      age each character a year
@@ -133,45 +133,63 @@ GameSchema.methods.winter = function () {
         // TODO determine hatred fallout
     //      determine holding events
         // TODO determine pentacost court plans
-    var that = this;
+    var that = this,
+        counter = 0,
+        l = this.families.length;
+    
     this.families.forEach(function (f) {
-        f.winter(that);
+        f.winter(that, function () {
+            counter += 1;
+            if (cb && counter === l) {cb(); }
+        });
     });
     
     return this;
 };
 
-GameSchema.methods.spring = function () {
+GameSchema.methods.spring = function (cb) {
     "use strict";
     // Activities that occur in Spring:
         // TODO determine pentacost court results
         // TODO determine any marriages or daliances
         // TODO determine campaign season plans
         // TODO determine campaign season quests
-    var that = this;
+    var that = this,
+        counter = 0,
+        l = this.families.length;
+    
     this.families.forEach(function (f) {
-        f.spring(that);
+        f.spring(that, function () {
+            counter += 1;
+            if (cb && counter === l) {cb(); }
+        });
     });
     
     return this;
 };
 
-GameSchema.methods.summer = function () {
+GameSchema.methods.summer = function (cb) {
     "use strict";
     // Activities that occur in Summer:
         // TODO determine campaign season results
         // TODO determine quest results
         // TODO determine pregnancies
         // TODO determine Christmas court plans
-    var that = this;
+    var that = this,
+        counter = 0,
+        l = this.families.length;
+    
     this.families.forEach(function (f) {
-        f.summer(that);
+        f.summer(that, function () {
+            counter += 1;
+            if (cb && counter === l) {cb(); }
+        });
     });
     
     return this;
 };
 
-GameSchema.methods.fall = function () {
+GameSchema.methods.fall = function (cb) {
     "use strict";
     // Activities that occur in Fall:
         // TODO determine harvest results
@@ -181,9 +199,15 @@ GameSchema.methods.fall = function () {
         // TODO determine generosity results
         // TODO determine Christmas court results
         // TODO determine any marriages or daliances
-    var that = this;
+    var that = this,
+        counter = 0,
+        l = this.families.length;
+    
     this.families.forEach(function (f) {
-        f.fall(that);
+        f.fall(that, function () {
+            counter += 1;
+            if (cb && counter === l) {cb(); }
+        });
     });
     
     return this;
@@ -191,25 +215,32 @@ GameSchema.methods.fall = function () {
 
 GameSchema.methods.nextTurn = function (cb) {
     "use strict";
-    var err = null;
+    var that = this,
+        nextSeason,
+        nextYear = this.turn.year,
+        f = function () {
+            that.turn.quarter = nextSeason;
+            that.turn.year = nextYear;
+            that.update(cb);
+        };
 
     switch (this.turn.quarter) {
     case 'Winter':
-        this.winter();
-        this.turn.quarter = 'Spring';
+        nextSeason = 'Spring';
+        this.winter(f);
         break;
     case 'Spring':
-        this.spring();
-        this.turn.quarter = 'Summer';
+        nextSeason = 'Summer';
+        this.spring(f);
         break;
     case 'Summer':
-        this.summer();
-        this.turn.quarter = 'Fall';
+        nextSeason = 'Fall';
+        this.summer(f);
         break;
     case 'Fall':
-        this.fall();
-        this.turn.quarter = 'Winter';
-        this.turn.year += 1;
+        nextSeason = 'Winter';
+        nextYear += 1;
+        this.fall(f);
         break;
     default:
         throw {
@@ -217,8 +248,6 @@ GameSchema.methods.nextTurn = function (cb) {
             message: 'GameSchema.methods.nextTurn'
         };
     }
-
-    this.update(cb);
     
     return this;
 };

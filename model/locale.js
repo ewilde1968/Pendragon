@@ -175,10 +175,22 @@ LocaleSchema.methods.getEvents = function (turn, result) {
     return result;
 };
 
-LocaleSchema.methods.determineYearEvents = function () {
+LocaleSchema.methods.determineYearEvents = function (cb) {
     "use strict";
-    var queue = this.queuedEvents;
-    this.investments.forEach(function (i) {i.determineYearEvents(queue); });
+    var queue = this.queuedEvents,
+        counter = 0,
+        limit = this.investments.length;
+
+    this.investments.forEach(function (i) {
+        i.determineYearEvents(function (ev) {
+            if (ev) {queue.push(ev); }
+            
+            counter += 1;
+            if (cb && counter === limit) {cb(); }
+        });
+    });
+    
+    if (this.investments === 0) {cb(); }
 };
 
 var Locale = mongoose.model('Locale', LocaleSchema);
