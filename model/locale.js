@@ -193,5 +193,28 @@ LocaleSchema.methods.determineYearEvents = function (cb) {
     if (this.investments === 0) {cb(); }
 };
 
+LocaleSchema.methods.doSeason = function (game, cb) {
+    "use strict";
+    switch (game.turn.quarter) {
+    case "Winter":
+        this.determineYearEvents(function () {
+            if (cb) {cb(); }
+        });
+        break;
+    case "Spring":
+        if (cb) {cb(); }
+        break;
+    case "Summer":
+        if (cb) {cb(); }
+        break;
+    case "Fall":
+        if (cb) {cb(); }
+        break;
+    default:
+        break;
+    }
+};
+
+
 var Locale = mongoose.model('Locale', LocaleSchema);
 module.exports = Locale;

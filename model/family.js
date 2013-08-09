@@ -177,7 +177,7 @@ FamilySchema.methods.getEvents = function (turn, result) {
     return result;
 };
 
-FamilySchema.methods.winter = function (game, cb) {
+FamilySchema.methods.doSeason = function (game, cb) {
     "use strict";
     var doneMember = this.members.length === 0,
         counterMember = 0,
@@ -186,24 +186,21 @@ FamilySchema.methods.winter = function (game, cb) {
         counterHolding = 0,
         mH = this.holdings.length;
     
-    // TODO determine pentacost court plans
     if (doneHoldings && doneMember && cb) {cb(); }
     
-    //      age each character a year
     this.members.forEach(function (m) {
-        m.increaseAge();
-        
-        counterMember += 1;
-        if (cb && counterMember === mL) {
-            doneMember = true;
-            if (doneHoldings) {cb(); }
-        }
-        // TODO determine child births
+        m.doSeason(game, function () {
+            // must make sure this callback is called for every member
+            counterMember += 1;
+            if (cb && counterMember === mL) {
+                doneMember = true;
+                if (doneHoldings) {cb(); }
+            }
+        });
     });
 
-    //      determine holding events
     this.holdings.forEach(function (h) {
-        h.determineYearEvents(function () {
+        h.doSeason(game, function () {
             // must make sure this callback is called for every holding
             counterHolding += 1;
             if (cb && counterHolding === mH) {
@@ -211,43 +208,11 @@ FamilySchema.methods.winter = function (game, cb) {
                 if (doneMember) {cb(); }
             }
         });
-        // TODO determine peasant population growth
-        // TODO determine hatred fallout
     });
 
     return this;
 };
 
-FamilySchema.methods.spring = function (game, cb) {
-    "use strict";
-    cb();
-    return this;
-};
-
-FamilySchema.methods.summer = function (game, cb) {
-    "use strict";
-    cb();
-    return this;
-};
-
-FamilySchema.methods.fall = function (game, cb) {
-    "use strict";
-    // Activities that occur in Fall:
-    //      experience checks for all family members
-    this.members.forEach(function (m) {
-        m.skills.forEach(function (s) {s.experienceCheck(); });
-    });
-        // TODO determine harvest results
-        // TODO determine investment completions
-        // TODO determine training results
-        // TODO determine generosity results
-        // TODO determine Christmas court results
-        // TODO determine any marriages or daliances
-
-    cb();
-    
-    return this;
-};
 
 var Family = mongoose.model('Family', FamilySchema);
 module.exports = Family;

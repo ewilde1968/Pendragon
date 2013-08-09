@@ -125,122 +125,47 @@ GameSchema.methods.endQuarter = function () {
     return this;
 };
 
-GameSchema.methods.winter = function (cb) {
-    "use strict";
-    // Activities that occur in Winter:
-    //      age each character a year
-        // TODO determine peasant population growth
-        // TODO determine hatred fallout
-    //      determine holding events
-        // TODO determine pentacost court plans
-    var that = this,
-        counter = 0,
-        l = this.families.length;
-    
-    this.families.forEach(function (f) {
-        f.winter(that, function () {
-            counter += 1;
-            if (cb && counter === l) {cb(); }
-        });
-    });
-    
-    return this;
-};
-
-GameSchema.methods.spring = function (cb) {
-    "use strict";
-    // Activities that occur in Spring:
-        // TODO determine pentacost court results
-        // TODO determine any marriages or daliances
-        // TODO determine campaign season plans
-        // TODO determine campaign season quests
-    var that = this,
-        counter = 0,
-        l = this.families.length;
-    
-    this.families.forEach(function (f) {
-        f.spring(that, function () {
-            counter += 1;
-            if (cb && counter === l) {cb(); }
-        });
-    });
-    
-    return this;
-};
-
-GameSchema.methods.summer = function (cb) {
-    "use strict";
-    // Activities that occur in Summer:
-        // TODO determine campaign season results
-        // TODO determine quest results
-        // TODO determine pregnancies
-        // TODO determine Christmas court plans
-    var that = this,
-        counter = 0,
-        l = this.families.length;
-    
-    this.families.forEach(function (f) {
-        f.summer(that, function () {
-            counter += 1;
-            if (cb && counter === l) {cb(); }
-        });
-    });
-    
-    return this;
-};
-
-GameSchema.methods.fall = function (cb) {
-    "use strict";
-    // Activities that occur in Fall:
-        // TODO determine harvest results
-        // TODO determine investment completions
-        // TODO determine training results
-    // experience checks for all family members
-        // TODO determine generosity results
-        // TODO determine Christmas court results
-        // TODO determine any marriages or daliances
-    var that = this,
-        counter = 0,
-        l = this.families.length;
-    
-    this.families.forEach(function (f) {
-        f.fall(that, function () {
-            counter += 1;
-            if (cb && counter === l) {cb(); }
-        });
-    });
-    
-    return this;
-};
-
 GameSchema.methods.nextTurn = function (cb) {
     "use strict";
     var that = this,
         nextSeason,
         nextYear = this.turn.year,
-        f = function () {
-            that.turn.quarter = nextSeason;
-            that.turn.year = nextYear;
-            that.update(cb);
-        };
+        counter = 0,
+        l = this.families.length;
 
     switch (this.turn.quarter) {
     case 'Winter':
+        // TODO determine peasant population growth
+        // TODO determine hatred fallout
+        //      determine holding events
+        // TODO determine pentacost court plans
         nextSeason = 'Spring';
-        this.winter(f);
         break;
     case 'Spring':
+        // TODO determine pentacost court results
+        // TODO determine any marriages or daliances
+        // TODO determine campaign season plans
+        // TODO determine campaign season quests
         nextSeason = 'Summer';
-        this.spring(f);
         break;
     case 'Summer':
+        // TODO determine campaign season results
+        // TODO determine quest results
+        // TODO determine pregnancies
+        // TODO determine Christmas court plans
         nextSeason = 'Fall';
-        this.summer(f);
         break;
     case 'Fall':
+        //      age each character a year
+        // determine harvest results
+        // TODO determine investment completions
+        // TODO determine training results
+        // experience checks for all family members
+        // TODO determine generosity results
+        // TODO determine Christmas court results
+        // TODO determine any marriages or daliances
         nextSeason = 'Winter';
         nextYear += 1;
-        this.fall(f);
         break;
     default:
         throw {
@@ -249,6 +174,17 @@ GameSchema.methods.nextTurn = function (cb) {
         };
     }
     
+    this.families.forEach(function (f) {
+        f.doSeason(that, function () {
+            counter += 1;
+            if (counter === l) {
+                that.turn.quarter = nextSeason;
+                that.turn.year = nextYear;
+                that.update(cb);
+            }
+        });
+    });
+
     return this;
 };
 

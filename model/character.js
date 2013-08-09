@@ -175,9 +175,9 @@ CharacterSchema.methods.mergeOptions = function (options) {
     return this;
 };
 
-CharacterSchema.methods.increaseAge = function () {
+CharacterSchema.methods.increaseAge = function (years) {
     "use strict";
-    this.age += 1;
+    this.age += years || 1;
 
     // check to see if the body and health values change this year
     if (decreptitudeYear[this.age]) {
@@ -205,6 +205,28 @@ CharacterSchema.methods.getSkill = function (name) {
     this.skills.forEach(function (s) {if (name === s.name) {result = s; } });
     
     return result;
+};
+
+CharacterSchema.methods.doSeason = function (game, cb) {
+    "use strict";
+    switch (game.turn.quarter) {
+    case "Winter":
+        if (cb) {cb(); }
+        break;
+    case "Spring":
+        if (cb) {cb(); }
+        break;
+    case "Summer":
+        if (cb) {cb(); }
+        break;
+    case "Fall":
+        this.increaseAge();
+        this.skills.forEach(function (s) {s.experienceCheck(); });
+        if (cb) {cb(); }
+        break;
+    default:
+        break;
+    }
 };
 
 
