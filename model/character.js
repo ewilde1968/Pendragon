@@ -39,6 +39,8 @@ var CharacterSchema = new Schema({
 }, {collection: 'characters', discriminatorKey: '_type' });
 
 
+CharacterSchema.statics.populateString = 'name profession age health body mind soul honor skills armor shield queuedEvents';
+
 
 CharacterSchema.statics.factory = function (template) {
     "use strict";
@@ -235,17 +237,20 @@ CharacterSchema.methods.cost = function (livingStandard) {
     return 0;
 };
 
-CharacterSchema.methods.doSeason = function (game, cb) {
+CharacterSchema.methods.nextTurn = function (options, game, evs, cb) {
     "use strict";
+    var cost = 0;
+    evs = evs || [];
+    
+    this.mergeOptions(options);
+    this.clearEvents(game.turn);
+    
     switch (game.turn.quarter) {
     case "Winter":
-        if (cb) {cb(); }
         break;
     case "Spring":
-        if (cb) {cb(); }
         break;
     case "Summer":
-        if (cb) {cb(); }
         break;
     case "Fall":
         // age each character a year
@@ -253,11 +258,19 @@ CharacterSchema.methods.doSeason = function (game, cb) {
 
         // experience checks for all family members
         this.skills.forEach(function (s) {s.experienceCheck(); });
-        if (cb) {cb(); }
+        
+        cost = this.cost();
         break;
     default:
         break;
     }
+    
+    this.getEvents(game.turn, evs);
+    
+    this.save(function (err, doc) {
+        if (err) {return err; }
+        cb(cost, evs);
+    });
 };
 
 

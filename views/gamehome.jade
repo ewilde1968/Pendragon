@@ -14,17 +14,56 @@ block content
     each o in se.choices
       mixin addSubeventDiv(o)
 
+  mixin characterButton(c)
+    button.memberDetailButton(data-id='#{c.id}')
+      p #{c.name}
+      p #{c.profession}
+
+  mixin characterPage(member)
+    .memberDetailPage(class='notShown', id='#{member.id}', name='#{member.id}')
+      p.memberName #{member.name}
+      p.memberProfession #{member.profession}
+      .statsView
+        p.memberAge #{member.age} years old
+        .health
+          span.statLabel Health: 
+          span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
+        .body
+          span.statLabel Body: 
+          span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
+        .mind
+          span.statLabel Mind: 
+          span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
+        .soul
+          span.statLabel Soul: 
+          span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
+        .honor
+          span.statLabel Honor: 
+          span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
+        .skills
+          each skill in member.skills
+            .skill
+              p #{skill.name}: #{skillDescriptionsA[skill.level]}
+        .equipment
+          if member.armor && member.armor.length > 0
+            if member.shield
+              p.armor #{member.armor} and Shield
+            else
+              p.armor #{member.armor}
+          else if member.shield
+            p.armor Shield
+
   if turnOnMenu
     script.
       var changesObj = new Object(),
-          cash = #{game.families[0].cash};
+          cash = #{family.cash};
       const skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
           statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
           honorDescA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
 
   #sidebar
     if turnOnMenu
-      img.gameimage(src="/images/#{game.families[0].name}image.jpg")
+      img.gameimage(src="/images/#{family.name}image.jpg")
     else
       img.gameimage(src="/images/pendragonimage.jpg")
     if turnOnMenu
@@ -54,7 +93,7 @@ block content
   #content
     if turnOnMenu
       #resources
-        p#cashOnHand Cash #{game.families[0].cash}£
+        p#cashOnHand Cash #{family.cash}£
         p#projectedIncome calculating...
         p#projectedCost calculating...
         #resourcesProgress
@@ -71,10 +110,10 @@ block content
           option(value='Opulent') Opulent
         #generosity
           label(for='generosity') Generosity
-          input(type='range', name='generosity', max='#{game.families[0].cash', value='#{game.families[0].generosity}')
-          p #{game.families[0].generosity}£
+          input(type='range', name='generosity', max='#{family.cash', value='#{family.generosity}')
+          p #{family.generosity}£
         #holdings.horizontalList
-          each holding in game.families[0].holdings
+          each holding in holdings
             .holdingSummary
               button.holdingDetailButton(data-id='#{holding.id}', class='#{holding.id}')
                 p.holdingName #{holding.name}
@@ -82,10 +121,13 @@ block content
                 p.holdingCost Cost: #{holding.cost}£
       #charactersPage(class='notShown')
         #characters
-          each member in game.families[0].members
-            button.memberDetailButton(data-id='#{member.id}')
-              p #{member.name}
-              p #{member.profession}
+          mixin characterButton(patriarch)
+          each bro in bros
+            mixin characterButton(bro)
+          each lady in ladies
+            mixin characterButton(lady)
+          each squire in extended
+            mixin characterButton(squire)
       #mapPage(class='notShown')
       #courtPage(class='notShown')
         if game.turn.quarter === 'Winter'
@@ -97,55 +139,22 @@ block content
         if game.turn.quarter === 'Fall'
           p Christmas Court
       #historyPage(class='notShown')
-      each member in game.families[0].members
-        .memberDetailPage(class='notShown', id='#{member.id}', name='#{member.id}')
-          p.memberName #{member.name}
-          p.memberProfession #{member.profession}
-          .statsView
-            p.memberAge #{member.age} years old
-            .health
-              span.statLabel Health: 
-              span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
-            .body
-              span.statLabel Body: 
-              span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
-            .mind
-              span.statLabel Mind: 
-              span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
-            .soul
-              span.statLabel Soul: 
-              span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
-            .honor
-              span.statLabel Honor: 
-              span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
-            .skills
-              each skill in member.skills
-                .skill
-                  p #{skill.name}: #{skillDescriptionsA[skill.level]}
-            .equipment
-              if member.armor && member.armor.length > 0
-                if member.shield
-                  p.armor #{member.armor} and Shield
-                else
-                  p.armor #{member.armor}
-      each holding in game.families[0].holdings
+      mixin characterPage(patriarch)
+      each bro in bros
+        mixin characterPage(bro)
+      each lady in ladies
+        mixin characterPage(lady)
+      each squire in extended
+        mixin characterPage(squire)
+      each holding in holdings
+        if !holding.steward.familyRef
+          mixin characterPage(holding.steward.stats[0])
         .holdingDetailPage(class='notShown', id='#{holding.id}', data-projincome='#{holding.projIncome}')
           .statsView
             p.holdingName #{holding.name}
             .holdingSteward
               p Steward
-              button.memberDetailButton(data-id='#{holding.steward}')
-                each member in game.families[0].members
-                  if member.id == holding.steward
-                    p #{member.name}
-                    - var foundStewardSkill = null;
-                    each skill in member.skills
-                      if skill.name === 'Stewardry'
-                        - foundStewardSkill = skill;
-                    if foundStewardSkill
-                      p Stewardry: #{skillDescriptionsA[foundStewardSkill.level]}
-                    else
-                      p Stewardry: Untrained
+              mixin characterButton(holding.steward.stats[0])
               button.changeSteward Change Steward
             .investments
               - var sum = 0;
@@ -345,9 +354,9 @@ block content
         // characterDetailPage
         // *******************************************
         var changeStat = function (stat, changeVal) {
-            var spanE = $('#' + '#{game.families[0].members[0].id} .' + stat + ' .statValue'),
+            var spanE = $('#' + '#{patriarch.id} .' + stat + ' .statValue'),
                 val = spanE.data('value') + changeVal,
-                cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
+                cObj = changesObj['#{patriarchid}'] || new Object(),
                 descs = (stat === 'honor') ? honorDescA : statDescA;
 
             if (val < 0) {val = 0; }
@@ -357,7 +366,7 @@ block content
             spanE.data('value', val);
 
             cObj[stat] = val;
-            changesObj['#{game.families[0].members[0].id}'] = cObj;
+            changesObj['#{patriarch.id}'] = cObj;
         };
         
 
@@ -371,13 +380,13 @@ block content
                     if (action.hasOwnProperty(prop)) {
                         switch (prop) {
                             case 'experience':
-                                var cObj = changesObj['#{game.families[0].members[0].id}'] || new Object(),
+                                var cObj = changesObj['#{patriarch.id}'] || new Object(),
                                     expObj = cObj['experience'] || new Array();
 
                                 if (expObj.indexOf(action[prop]) === -1) {expObj.push(action[prop]); }
 
                                 cObj['experience'] = expObj;
-                                changesObj['#{game.families[0].members[0].id}'] = cObj;
+                                changesObj['#{patriarch.id}'] = cObj;
                                 break;
                             case 'honor':
                                 changeStat( prop, action[prop]);

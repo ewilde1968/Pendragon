@@ -15,7 +15,7 @@ var KnightSchema = Character.schema.extend({
 });
 
 
-KnightSchema.statics.factory = function (template, firstKnight) {
+KnightSchema.statics.factory = function (template, cb, firstKnight) {
     "use strict";
     var result = new Knight(template);
     result.initialize(template);
@@ -33,12 +33,14 @@ KnightSchema.statics.factory = function (template, firstKnight) {
     result.armor = 'Chain Hauberk';
     result.shield = true;
 
+    result.save(cb);
+    
     return result;
 };
 
 KnightSchema.methods.cost = function (l) {
     "use strict";
-    switch (l) {
+    switch (l || 'Normal') {
     case 'Poor':
         return 1;
     case 'Normal':

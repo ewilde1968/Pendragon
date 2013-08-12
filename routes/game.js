@@ -7,7 +7,8 @@
 var Game = require('./../model/game'),
     Account = require('./../model/account'),
     defaultObjects = require('./../model/defaultObjects'),
-    Character = require('./../model/character');
+    Character = require('./../model/character'),
+    Family = require('./../model/family');
 
 //app.get('/user/:userid/game/new', user.ensureSignedIn, game.newGame);
 exports.newGame = function (req, res, next) {
@@ -42,20 +43,36 @@ exports.createGame = function (req, res, next) {
         });
 };
 
-var showGameHome = function (req, res, game) {
+var showGameHome = function (req, res, data) {
     "use strict";
-    if (game) {
-        game.getEvents(function (evA) {
-            res.render('gamehome',
-                       {accountId: req.params.userid,
-                        gameId: req.params.gameid,
-                        game: game,
-                        events: evA
-                       });
-        });
+    if (data && data.game) {
+        res.render('gamehome',
+                   {accountId: req.params.userid,
+                    gameId: req.params.gameid,
+                    game: data.game,
+                    events: data.events,
+                    family: data.family,
+                    patriarch: data.patriarch,
+                    holdings: data.holdings,
+                    bros: data.bros,
+                    ladies: data.ladies,
+                    extended: data.extended
+                   });
     } else {
         res.render('gamehome', {accountId: req.params.userid});
     }
+};
+
+var accountHome = function (req, res, next) {
+    "use strict";
+    Account.findById(req.session.userId, function (err, acct) {
+        if (err || !acct) {return next(err); }
+
+        acct.clearHome(function (err, a) {
+            if (err || !a) {return next(err); }
+            res.redirect('/user/' + a.id);
+        });
+    });
 };
 
 //app.get('/user/:userid/game/:gameid', user.ensureSignedIn, game.home);
@@ -63,7 +80,13 @@ exports.home = function (req, res, next) {
     "use strict";
     Game.findById(req.params.gameid, function (err, game) {
         if (err) {return err; }
-        showGameHome(req, res, game);
+        if (game) {
+            game.getEvents(function (data) {
+                showGameHome(req, res, data);
+            });
+        } else {
+            accountHome(req, res, next);
+        }
     });
 };
 
@@ -80,19 +103,17 @@ exports.update = function (req, res, next) {
             }
 
             if (game.turn.quarter === req.body.changes.turn.quarter && game.turn.year === req.body.changes.turn.year) {
-                game.endQuarter()
-                    .mergeOptions(req.body, function () {
-                        game.nextTurn(function (err, g) {
-                            if (err) {return err; }
-                            showGameHome(req, res, g);
-                        });
-                    });
+                game.nextTurn(req.body, function (data) {
+                    showGameHome(req, res, data);
+                });
             } else {
                 // submitted turn doesn't match state of game, ignore the submission
-                showGameHome(req, res, game);
+                game.getEvents(function (data) {
+                    showGameHome(req, res, data);
+                });
             }
         } else {
-            res.redirect('/user/' + req.params.userid);
+            accountHome(req, res, next);
         }
     });
 };

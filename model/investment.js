@@ -49,11 +49,11 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
         eventName;
     
     if (this.built) {
-        luck = Math.floor(Math.random() * 20);
+        luck = Math.floor(Math.random() * 10);
 
         if (luck === 0 && this.goodEvents && this.goodEvents.length > 0) {
             eventList = this.goodEvents;
-        } else if (luck === 19 && this.badEvents && this.badEvents.length > 0) {
+        } else if (luck === 9 && this.badEvents && this.badEvents.length > 0) {
             eventList = this.badEvents;
         }
 

@@ -12,7 +12,9 @@ var mongoose = require('mongoose'),
     Character = require('./character');
 
 var LadySchema = Character.schema.extend({
-    children:       [ObjectId]
+    babies:     Number,                     // # babies in the womb
+    father:     ObjectId,                   // father of any babies in the womb
+    husband:    ObjectId
 });
 
 
@@ -24,7 +26,7 @@ LadySchema.statics.factory = function (template, firstKnight) {
     return result;
 };
 
-LadySchema.mehods.initialize = function (template) {
+LadySchema.methods.initialize = function (template) {
     "use strict";
     this.prototype.initialize(template);
     
@@ -50,6 +52,29 @@ LadySchema.methods.increaseAge = function () {
     }
     
     return this;
+};
+
+LadySchema.methods.nextTurn = function (options, game, evs, cb) {
+    "use strict";
+    switch (game.turn.quarter) {
+    case "Winter":
+        break;
+    case "Spring":
+        break;
+    case "Summer":
+        break;
+    case "Fall":
+        break;
+    default:
+        throw {
+            name: 'Invalid quarter',
+            message: 'LadySchema.doTurn, quarter ' + game.turn.quarter
+        };
+    }
+
+    Character.nextTurn.apply(this, [options, game, evs, function (evs, cost) {
+        if (cb) {cb(cost, evs); }
+    }]);
 };
 
 

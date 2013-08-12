@@ -15,7 +15,7 @@ var mongoose = require('mongoose'),
 var GameSchema = new Schema({
     owner:          { type: ObjectId, required: true },
     settings:       Object,
-    families:       [Family.schema],
+    families:       [{ type: ObjectId, ref: 'Family'}],
     turn:           { year: Number, quarter: String },
     queuedEvents:   [Storyline.schema]
 });
@@ -39,13 +39,11 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
         });
 
         defaultObjects.families.forEach(function (template) {
-            Family.factory(template, settings, function (err, f) {
-                if (err) {return err; }
-
+            Family.factory(template, settings, function (f) {
                 if (settings.family === f.name) {
-                    result.families.unshift(f);      // player is always the zeroeth element
+                    result.families.unshift(f.id);      // player is always the zeroeth element
                 } else {
-                    result.families.push(f);
+                    result.families.push(f.id);
                 }
                 
                 counter += 1;
@@ -94,16 +92,20 @@ GameSchema.methods.getEvents = function (cb) {
     var that = this,
         result = [];
 
-    // only get events for the player's family
-    this.families[0].getEvents(that.turn, result);
-    
     this.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(that.turn, that.satisfies)) {
             result.push(e);
         }
     });
-    
-    if (cb) {cb(result); }
+
+    // only get events for the player's family
+    Family.findById(this.families[0], function (err, doc) {
+        if (err) {return err; }
+        doc.getEvents(that, result, function (data) {
+            data.game = that;
+            if (cb) {cb(data); }
+        });
+    });
     
     return this;
 };
@@ -125,13 +127,11 @@ GameSchema.methods.endQuarter = function () {
     return this;
 };
 
-GameSchema.methods.nextTurn = function (cb) {
+GameSchema.methods.nextTurn = function (options, cb) {
     "use strict";
     var that = this,
         nextSeason,
-        nextYear = this.turn.year,
-        counter = 0,
-        l = this.families.length;
+        nextYear = this.turn.year;
 
     switch (this.turn.quarter) {
     case 'Winter':
@@ -139,6 +139,7 @@ GameSchema.methods.nextTurn = function (cb) {
         // TODO determine hatred fallout
         // determine holding events
         // TODO determine pentacost court plans
+        // TODO determine births
         nextSeason = 'Spring';
         break;
     case 'Spring':
@@ -159,7 +160,7 @@ GameSchema.methods.nextTurn = function (cb) {
         // age each character a year
         // determine harvest results
         // determine next year's projected income
-        // TODO determine investment completions
+        // determine investment completions
         // TODO determine training results
         // experience checks for all family members
         // TODO determine generosity results
@@ -175,16 +176,31 @@ GameSchema.methods.nextTurn = function (cb) {
         };
     }
     
-    this.families.forEach(function (f) {
-        f.doSeason(that, function () {
-            counter += 1;
-            if (counter === l) {
-                that.turn.quarter = nextSeason;
-                that.turn.year = nextYear;
-                that.update(cb);
-            }
+    that.populate({path: 'families', model: 'Family', select: Family.populateString},
+                  function (err, doc) {
+            var counter = 0,
+                l = doc.families.length,
+                passData;
+                      
+            doc.families.forEach(function (f, index) {
+                f.nextTurn(0 === index ? options : null, that, function (data) {
+                    counter += 1;
+
+                    // only pass events for the  player's family
+                    if (0 === index) {passData = data; }
+
+                    if (counter === l) {
+                        that.turn.quarter = nextSeason;
+                        that.turn.year = nextYear;
+                        
+                        that.update(function (err, g) {
+                            passData.game = that;
+                            if (cb) {cb(passData); }
+                        });
+                    }
+                });
+            });
         });
-    });
 
     return this;
 };

@@ -52,5 +52,13 @@ AccountSchema.statics.login = function (username, password, cb) {
     return acct;
 };
 
+AccountSchema.methods.clearHome = function (cb) {
+    "use strict";
+    this.currentGame = null;
+    this.save(cb);
+    
+    return this;
+};
+
 Account = mongoose.model('Account', AccountSchema);
 module.exports = Account;

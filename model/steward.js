@@ -1,5 +1,9 @@
 /*
  * Steward model
+ *
+ * All steward class characters are commoners, generally hired to be the
+ * steward for a family holding.
+ *
 */
 /*global export, require, module */
 var Steward; // forward to clear out JSLint errors

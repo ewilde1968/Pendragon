@@ -12,13 +12,19 @@ var mongoose = require('mongoose'),
     Character = require('./character'),
     Knight = require('./knight'),
     Steward = require('./steward'),
+    Lady = require('./lady'),
+    Squire = require('./squire'),
     Storyline = require('./storyline');
 
 
 var FamilySchema = new Schema({
     name:           { type: String, required: true },
     holdings:       [Locale.schema],
-    members:        [Character.schema],   // patriarch is always zeroeth member
+    patriarch:      [{ type: ObjectId, ref: 'Knight' }],
+    bros:           [{ type: ObjectId, ref: 'Knight' }],    // brothers and uncles of the patriarch
+    ladies:         [{ type: ObjectId, ref: 'Lady' }],      // women of all stations in the close family
+    extended:       [{ type: ObjectId, ref: 'Squire' }],    // nobles of other persuasions, usually trained but not fully equipped
+    politics:       [{ type: ObjectId, ref: 'Family', relationship: String}],
     cash:           Number,
     specialty:      String,
     generosity:     Number,
@@ -26,6 +32,8 @@ var FamilySchema = new Schema({
     queuedEvents:   [Storyline.schema]
 });
 
+
+FamilySchema.statics.populateString = 'name holdings patriarch bros ladies extended politics cash specialty generosity livingStandard queuedEvents';
 
 FamilySchema.statics.factory = function (template, settings, cb) {
     "use strict";
@@ -35,24 +43,24 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                              generosity: template.generosity || 0,
                              livingStandard: template.livingStandard || 'Normal'
                             }),
-        firstKnight = Knight.factory({name: 'first knight',
-                                         profession: 'Knight'
-                                        }, true),
         firstSteward = Steward.factory({name: 'first steward',
                                           profession: 'Steward'
                                          }),
-        holding = Locale.factory(template.locale);
-
-    result.members.push(firstKnight);   // patriarch is always zeroeth member
-    result.members.push(firstSteward);
+        holding = Locale.factory(template.locale),
+        firstKnight = Knight.factory({name: 'first knight',
+                                         profession: 'Knight'
+                                        }, function () {
+            result.patriarch.push(firstKnight.id);
+            result.save(function (err, doc) {
+                if (err) {return err; }
+                if (cb) {cb(doc); }
+            });
+        }, true);
 
     holding.addSteward(firstSteward);
     result.holdings.push(holding);
-
     result.generateSpecialty()
         .fatherHistory();
-
-    if (cb) {cb(0, result); }
 
     return result;
 };
@@ -78,70 +86,6 @@ FamilySchema.methods.generateSpecialty = function () {
     return this;
 };
 
-FamilySchema.methods.mergeOptions = function (options, cb) {
-    "use strict";
-    var that = this,
-        counter = 0,
-        cbCalled = false;
-
-    if (options && options.changes) {
-        this.generosity = options.changes.generosity || this.generosity;
-        this.livingStandard = options.changes.livingStyle || this.livingStandard;
-        this.cash = options.changes.cash || this.cash;
-
-        this.members.forEach(function (m) {
-            if (options.changes[m.id]) {
-                m.mergeOptions(options.changes[m.id]);
-            }
-        });
-
-        this.holdings.forEach(function (h, i, a) {
-            if (options.changes[h.id]) {
-                counter += 1;
-                h.mergeOptions(options.changes[h.id], function () {
-                    // remove cash for building investments at the family level
-                    // even if option to build fails, up front cost is sunk into investment
-                    if (options.changes[h.id].build) {
-                        that.cash -= options.changes[h.id].build.cost;
-                    }
-                    
-                    counter -= 1;
-                    if (0 === counter && i === (a.length - 1) && cb) {
-                        cbCalled = true;
-                        cb();
-                    }
-                });
-            }
-        });
-        
-        if (0 === counter && cb && !cbCalled) {cb(); }
-    }
-    
-    return this;
-};
-
-FamilySchema.methods.endQuarter = function (turn) {
-    "use strict";
-    this.clearEvents(turn);
-    
-    return this;
-};
-
-FamilySchema.methods.resources = function () {
-    "use strict";
-    return 6;   // TODO
-};
-
-FamilySchema.methods.getMember = function (id) {
-    "use strict";
-    return this.members.id(id);
-};
-
-FamilySchema.methods.getHolding = function (id) {
-    "use strict";
-    return this.holdings.id(id);
-};
-
 FamilySchema.methods.satisfies = function (requirements) {
     "use strict";
     return true;    // TODO
@@ -162,98 +106,231 @@ FamilySchema.methods.clearEvents = function (turn) {
     return this;
 };
 
-FamilySchema.methods.getEvents = function (turn, result) {
+FamilySchema.methods.getEvents = function (game, result, cb) {
     "use strict";
     // see which events match the current turn and return
     // an array of all such Storyline objects
-    var that = this;
+    var that = this,
+        doneLadies = 0 === that.ladies.length,
+        doneBros = 0 === that.bros.length,
+        donePatriarch,
+        doneSquires = 0 === that.extended.length,
+        doneHoldings = 0 === that.holdings.length,
+        complete = function () {
+            if (cb && doneBros && doneHoldings && doneLadies && donePatriarch && doneSquires) {
+                
+                cb({
+                    family: that,
+                    patriarch: donePatriarch,
+                    holdings: doneHoldings,
+                    bros: doneBros,
+                    ladies: doneLadies,
+                    extended: doneSquires,
+                    events: result
+                });
+            }
+        };
     
     if (!result) {
         result = [];
     }
     
-    this.members.forEach(function (m) {m.getEvents(turn, result); });
-    this.holdings.forEach(function (h) {h.getEvents(turn, result); });
-
-    this.queuedEvents.forEach(function (e) {
-        if (e.filterByTurn(turn, that.satisfies)) {
+    that.queuedEvents.forEach(function (e) {
+        if (e.filterByTurn(game.turn, that.satisfies)) {
             result.push(e);
         }
     });
     
-    return result;
+    // populate in priority of events being shown to user
+    that.populate({path: 'patriarch bros', model: 'Knight', select: Knight.populateString},
+                  function (err, doc) {
+            var counter = 0,
+                limit = doc.bros.length;
+
+            if (err) {return err; }
+
+            doc.patriarch[0].getEvents(game.turn, result);
+            donePatriarch = doc.patriarch[0];
+
+            doc.holdings.forEach(function (h) {h.getEvents(game.turn, result); });
+            doneHoldings = doc.holdings;
+
+            doc.bros.forEach(function (b) {
+                counter += 1;
+                b.getEvents(game.turn, result);
+                if (counter === limit) {
+                    doneBros = doc.bros;
+                    complete();
+                }
+            });
+                      
+            complete();
+        });
+
+    that.populate({path: 'ladies', model: 'Lady', select: Lady.populateString},
+                    function (err, doc) {
+            var counter = 0,
+                limit = doc.ladies.length;
+
+            if (err) {return err; }
+
+            doc.ladies.forEach(function (l) {
+                counter += 1;
+                l.getEvents(game.turn, result);
+                if (counter === limit) {
+                    doneLadies = doc.ladies;
+                    complete();
+                }
+            });
+        });
+    
+    that.populate({path: 'squires', model: 'Squire', select: Squire.populateString},
+                    function (err, doc) {
+            var counter = 0,
+                limit = doc.extended.length;
+                    
+            if (err) {return err; }
+                     
+            doc.extended.forEach(function (s) {
+                counter += 1;
+                s.getEvents(game.turn, result);
+                if (counter === limit) {
+                    doneSquires = doc.extended;
+                    complete();
+                }
+            });
+        });
+
+    return that;
 };
 
-FamilySchema.methods.doSeason = function (game, cb) {
+FamilySchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
+    // see which events match the current turn and return
+    // an array of all such Storyline objects
     var that = this,
-        doneMember = this.members.length === 0,
-        counterMember = 0,
-        mL = this.members.length,
-        doneHoldings = this.holdings.length === 0,
-        counterHolding = 0,
-        mH = this.holdings.length;
-    
-    if (doneHoldings && doneMember && cb) {cb(); }
-    
-    this.members.forEach(function (m) {
-        m.doSeason(game, function () {
-            // must make sure this callback is called for every member
-            switch (game.turn.quarter) {
-            case 'Winter':
-                break;
-            case 'Spring':
-                break;
-            case 'Summer':
-                break;
-            case 'Fall':
-                that.cash -= m.cost(that.livingStandard);
-                break;
-            default:
-                throw {
-                    name: 'Invalid Season',
-                    message: 'FamilySchema.methods.doSeason'
-                };
+        result = [],
+        totalCost = 0,
+        holdingcosts = 0,
+        doneLadies = 0 === that.ladies.length,
+        doneBros = 0 === that.bros.length,
+        donePatriarch,
+        doneSquires = 0 === that.extended.length,
+        doneHoldings = 0 === that.holdings.length,
+        complete = function (cost) {
+            totalCost += cost;
+            if (doneBros && doneHoldings && doneLadies && donePatriarch && doneSquires) {
+                that.cash -= totalCost;
+                that.save(function (err, doc) {
+                    if (cb) {
+                        cb({
+                            family: that,
+                            patriarch: donePatriarch,
+                            holdings: doneHoldings,
+                            bros: doneBros,
+                            ladies: doneLadies,
+                            extended: doneSquires,
+                            events: result
+                        });
+                    }
+                });
             }
-            
-            counterMember += 1;
-            if (cb && counterMember === mL) {
-                doneMember = true;
-                if (doneHoldings) {cb(); }
+        },
+        counter = 0,
+        limit = this.holdings.length;
+    
+    that.clearEvents(game.turn);
+
+    // TODO option = options || that.AIOptions(game, cb);
+    if (options && options.changes) {
+        that.generosity = options.changes.generosity || that.generosity;
+        that.livingStandard = options.changes.livingStyle || that.livingStandard;
+        that.cash = options.changes.cash || that.cash;
+    }
+
+    // populate in priority of events being shown to user
+    that.populate({path: 'patriarch', model: 'Knight', select: Knight.populateString},
+                  function (err, doc) {
+            if (err) {return err; }
+
+            doc.patriarch[0].nextTurn(!options || options.changes[doc.patriarch[0].id], game, result, function (cost, evs) {
+                donePatriarch = doc.patriarch[0];
+                complete(cost);
+            });
+        });
+
+    that.holdings.forEach(function (h) {
+        h.nextTurn(!options || options.changes[h.id], game, result, function (cost, evs) {
+            holdingcosts += cost;
+                
+            counter += 1;
+            if (counter === limit) {
+                doneHoldings = that.holdings;
+                complete(holdingcosts);
             }
         });
     });
 
-    this.holdings.forEach(function (h) {
-        h.doSeason(game, function () {
-            // must make sure this callback is called for every holding
-            switch (game.turn.quarter) {
-            case 'Winter':
-                break;
-            case 'Spring':
-                break;
-            case 'Summer':
-                break;
-            case 'Fall':
-                that.cash += h.harvests[0].income;
-                break;
-            default:
-                throw {
-                    name: 'Invalid Season',
-                    message: 'FamilySchema.methods.doSeason'
-                };
-            }
-            
-            counterHolding += 1;
-            if (cb && counterHolding === mH) {
-                doneHoldings = true;
-                if (doneMember) {cb(); }
-            }
+    that.populate({path: 'bros', model: 'Knight', select: Knight.populateString},
+                  function (err, doc) {
+            var counter = 0,
+                limit = doc.bros.length;
+
+            if (err) {return err; }
+            doc.bros.forEach(function (b) {
+                b.nextTurn(!options || options.changes[b.id], game, result, function (cost, evs) {
+                    totalCost += cost;
+                
+                    counter += 1;
+                    if (counter === limit) {
+                        doneBros = doc.bros;
+                        complete(totalCost);
+                    }
+                });
+            });
         });
-    });
+
+    this.populate({path: 'ladies', model: 'Lady', select: Lady.populateString},
+                    function (err, doc) {
+            var counter = 0,
+                limit = doc.ladies.length;
+
+            if (err) {return err; }
+            doc.ladies.forEach(function (l) {
+                l.nextTurn(!options || options.changes[l.id], game, result, function (cost, evs) {
+                    totalCost += cost;
+                
+                    counter += 1;
+                    if (counter === limit) {
+                        doneLadies = doc.ladies;
+                        complete(totalCost);
+                    }
+                });
+            });
+        });
+    
+    this.populate({path: 'squires', model: 'Squire', select: Squire.populateString},
+                    function (err, doc) {
+            var counter = 0,
+                limit = doc.extended.length;
+                    
+            if (err) {return err; }
+            doc.extended.forEach(function (s) {
+                s.nextTurn(options.changes[s.id], game, result, function (cost, evs) {
+                    totalCost += cost;
+                
+                    counter += 1;
+                    if (counter === limit) {
+                        doneSquires = doc.extended;
+                        complete(totalCost);
+                    }
+                });
+            });
+        });
 
     return this;
 };
+
 
 
 var Family = mongoose.model('Family', FamilySchema);
