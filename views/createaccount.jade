@@ -11,7 +11,8 @@ block content
       p
         label(for="username") Email
         input( name="username", type="email", required="required", size="22", placeholder="username@domain.com")
-      p#errorP(class="errorString notShown") That username is already taken
+      if err
+        p#errorP(class="errorString") Invalid user name
       p
         label(for="password") Password
         input( name="password", type="password", size="22", required="required", placeholder="password")
@@ -23,8 +24,6 @@ block content
 
   script.
     $(document).ready(function () {
-        if (#{err}) {$('#errorP').removeClass('notShown'); }
-
         $('form').submit(function () {
             // validate form
             var good = true,

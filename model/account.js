@@ -21,18 +21,23 @@ var AccountSchema = new Schema({
 
 AccountSchema.statics.newAccount = function (username, password, cb) {
     "use strict";
-    // assume logged in appropriately by this point
-    var acct = new Account({email: username, password: password});
-    if (acct) {
-        acct.save(cb);
-    } else {
-        throw {
-            name: "new Account failed",
-            message: "Account.updateAccount"
-        };
-    }
-    
-    return acct;
+    Account.findOne({email: username}, function (err, doc) {
+        if (err) {return err; }
+        if (!doc) {
+            // assume logged in appropriately by this point
+            var acct = new Account({email: username, password: password});
+            if (acct) {
+                acct.save(cb);
+            } else {
+                throw {
+                    name: "new Account failed",
+                    message: "Account.updateAccount"
+                };
+            }
+        } else {
+            if (cb) {cb(0); }
+        }
+    });
 };
 
 AccountSchema.statics.updateAccount = function (userId, username, password) {
