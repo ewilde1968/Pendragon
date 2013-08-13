@@ -32,7 +32,10 @@ var LocaleSchema = new Schema({
 });
 
 
-LocaleSchema.statics.factory = function (template) {
+LocaleSchema.statics.populateString = 'name projIncome harvests cost steward investments allowedInvests allowedFeasts taxes population train hate queuedEvents';
+
+
+LocaleSchema.statics.factory = function (template, cb) {
     "use strict";
     var result = new Locale({name: template.name,
                              projIncome: template.projIncome || 6,
@@ -56,6 +59,10 @@ LocaleSchema.statics.factory = function (template) {
     defaultObjects.feasts.forEach(function (i) {    // TODO only allow the right subset
         result.allowedFeasts.push(Feast.factory(i));
     });
+
+    result.addSteward(Steward.factory({name: 'first steward'}));
+    
+    result.save(cb);
 
     return result;
 };
@@ -116,8 +123,8 @@ LocaleSchema.methods.addSteward = function (s) {
     if (this.steward.stats.length > 0 && !this.steward.familyRef) {
         // if familyRef is not valid then this is a commoner steward and was paid
         this.cost -= 1;
+        this.steward.stats.pop();
     }
-    this.steward.stats.pop();
 
     if (s instanceof Steward) {
         // commoner steward
@@ -265,7 +272,13 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
 LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
     "use strict";
     var that = this,
-        totalCost = 0;
+        totalCost = 0,
+        complete = function () {
+            that.save(function (err) {
+                if (err) {return err; }
+                if (cb) {cb(totalCost, evs); }
+            });
+        };
 
     that.clearEvents(game.turn);
     that.mergeOptions(options, evs, function (cost) {
@@ -277,20 +290,17 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
             // TODO determine hatred fallout
             // determine holding events
             that.determineYearEvents(evs, function () {
-                that.save(function (err, doc) {
-                    if (cb) {cb(totalCost, that.getEvents(game.turn, evs)); }
-                });
+                that.getEvents(game.turn, evs);
+                complete();
             });
             break;
         case "Spring":
-            that.save(function (err, doc) {
-                if (cb) {cb(totalCost, that.getEvents(game.turn, evs)); }
-            });
+            that.getEvents(game.turn, evs);
+            complete();
             break;
         case "Summer":
-            that.save(function (err, doc) {
-                if (cb) {cb(totalCost, that.getEvents(game.turn, evs)); }
-            });
+            that.getEvents(game.turn, evs);
+            complete();
             break;
         case "Fall":
             // determine harvest results
@@ -315,7 +325,8 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
 
                 // TODO determine training results
                 totalCost += that.cost - that.harvests[0];
-                if (cb) {cb(totalCost, that.getEvents(game.turn, evs)); }
+                that.getEvents(game.turn, evs);
+                complete();
             });
             break;
         default:
@@ -323,7 +334,7 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
         }
     });
     
-    // saved above, do not edit object below switch statement
+    // callback called above, do not edit object below switch statement
 };
 
 

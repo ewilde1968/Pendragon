@@ -239,11 +239,12 @@ CharacterSchema.methods.cost = function (livingStandard) {
 
 CharacterSchema.methods.nextTurn = function (options, game, evs, cb) {
     "use strict";
-    var cost = 0;
+    var that = this,
+        cost = 0;
     evs = evs || [];
     
-    this.mergeOptions(options);
-    this.clearEvents(game.turn);
+    that.mergeOptions(options);
+    that.clearEvents(game.turn);
     
     switch (game.turn.quarter) {
     case "Winter":
@@ -254,20 +255,20 @@ CharacterSchema.methods.nextTurn = function (options, game, evs, cb) {
         break;
     case "Fall":
         // age each character a year
-        this.increaseAge();
+        that.increaseAge();
 
         // experience checks for all family members
-        this.skills.forEach(function (s) {s.experienceCheck(); });
+        that.skills.forEach(function (s) {s.experienceCheck(); });
         
-        cost = this.cost();
+        cost = that.cost();
         break;
     default:
         break;
     }
     
-    this.getEvents(game.turn, evs);
+    that.getEvents(game.turn, evs);
     
-    this.save(function (err, doc) {
+    that.save(function (err) {
         if (err) {return err; }
         cb(cost, evs);
     });

@@ -19,7 +19,7 @@ var mongoose = require('mongoose'),
 
 var FamilySchema = new Schema({
     name:           { type: String, required: true },
-    holdings:       [Locale.schema],
+    holdings:       [{ type: ObjectId, ref: 'Locale' }],
     patriarch:      [{ type: ObjectId, ref: 'Knight' }],
     bros:           [{ type: ObjectId, ref: 'Knight' }],    // brothers and uncles of the patriarch
     ladies:         [{ type: ObjectId, ref: 'Lady' }],      // women of all stations in the close family
@@ -43,24 +43,24 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                              generosity: template.generosity || 0,
                              livingStandard: template.livingStandard || 'Normal'
                             }),
-        firstSteward = Steward.factory({name: 'first steward',
-                                          profession: 'Steward'
-                                         }),
-        holding = Locale.factory(template.locale),
-        firstKnight = Knight.factory({name: 'first knight',
-                                         profession: 'Knight'
-                                        }, function () {
-            result.patriarch.push(firstKnight.id);
-            result.save(function (err, doc) {
-                if (err) {return err; }
-                if (cb) {cb(doc); }
-            });
-        }, true);
+        firstKnight,
+        holding = Locale.factory(template.locale, function (err, locale) {
+            if (err) {return err; }
 
-    holding.addSteward(firstSteward);
-    result.holdings.push(holding);
-    result.generateSpecialty()
-        .fatherHistory();
+            result.generateSpecialty()
+                .fatherHistory()
+                .holdings.push(holding.id);
+            
+            firstKnight = Knight.factory({name: 'first knight',
+                                          profession: 'Knight'
+                                         }, function () {
+                result.patriarch.push(firstKnight.id);
+                result.save(function (err, doc) {
+                    if (err) {return err; }
+                    if (cb) {cb(doc); }
+                });
+            }, true);
+        });
 
     return result;
 };
@@ -152,9 +152,6 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
             doc.patriarch[0].getEvents(game.turn, result);
             donePatriarch = doc.patriarch[0];
 
-            doc.holdings.forEach(function (h) {h.getEvents(game.turn, result); });
-            doneHoldings = doc.holdings;
-
             doc.bros.forEach(function (b) {
                 counter += 1;
                 b.getEvents(game.turn, result);
@@ -167,6 +164,23 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
             complete();
         });
 
+    that.populate({path: 'holdings', model: 'Locale', select: Locale.populateString},
+                    function (err, doc) {
+            var counter = 0,
+                limit = doc.holdings.length;
+
+            if (err) {return err; }
+
+            doc.holdings.forEach(function (h) {
+                counter += 1;
+                h.getEvents(game.turn, result);
+                if (counter === limit) {
+                    doneHoldings = doc.holdings;
+                    complete();
+                }
+            });
+        });
+    
     that.populate({path: 'ladies', model: 'Lady', select: Lady.populateString},
                     function (err, doc) {
             var counter = 0,
@@ -211,7 +225,6 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     var that = this,
         result = [],
         totalCost = 0,
-        holdingcosts = 0,
         doneLadies = 0 === that.ladies.length,
         doneBros = 0 === that.bros.length,
         donePatriarch,
@@ -235,9 +248,7 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
                     }
                 });
             }
-        },
-        counter = 0,
-        limit = this.holdings.length;
+        };
     
     that.clearEvents(game.turn);
 
@@ -259,32 +270,41 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
             });
         });
 
-    that.holdings.forEach(function (h) {
-        h.nextTurn(!options || options.changes[h.id], game, result, function (cost, evs) {
-            holdingcosts += cost;
-                
-            counter += 1;
-            if (counter === limit) {
-                doneHoldings = that.holdings;
-                complete(holdingcosts);
-            }
-        });
-    });
-
     that.populate({path: 'bros', model: 'Knight', select: Knight.populateString},
                   function (err, doc) {
             var counter = 0,
-                limit = doc.bros.length;
+                limit = doc.bros.length,
+                groupCost = 0;
 
             if (err) {return err; }
             doc.bros.forEach(function (b) {
                 b.nextTurn(!options || options.changes[b.id], game, result, function (cost, evs) {
-                    totalCost += cost;
+                    groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
                         doneBros = doc.bros;
-                        complete(totalCost);
+                        complete(groupCost);
+                    }
+                });
+            });
+        });
+
+    that.populate({path: 'holdings', model: 'Locale', select: Locale.populateString},
+                  function (err, doc) {
+            var counter = 0,
+                limit = doc.holdings.length,
+                groupCost = 0;
+
+            if (err) {return err; }
+            doc.holdings.forEach(function (h) {
+                h.nextTurn(!options || options.changes[h.id], game, result, function (cost, evs) {
+                    groupCost += cost;
+                
+                    counter += 1;
+                    if (counter === limit) {
+                        doneHoldings = doc.holdings;
+                        complete(groupCost);
                     }
                 });
             });
@@ -293,17 +313,18 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     this.populate({path: 'ladies', model: 'Lady', select: Lady.populateString},
                     function (err, doc) {
             var counter = 0,
-                limit = doc.ladies.length;
+                limit = doc.ladies.length,
+                groupCost = 0;
 
             if (err) {return err; }
             doc.ladies.forEach(function (l) {
                 l.nextTurn(!options || options.changes[l.id], game, result, function (cost, evs) {
-                    totalCost += cost;
+                    groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
                         doneLadies = doc.ladies;
-                        complete(totalCost);
+                        complete(groupCost);
                     }
                 });
             });
@@ -312,17 +333,18 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     this.populate({path: 'squires', model: 'Squire', select: Squire.populateString},
                     function (err, doc) {
             var counter = 0,
-                limit = doc.extended.length;
+                limit = doc.extended.length,
+                groupCost = 0;
                     
             if (err) {return err; }
             doc.extended.forEach(function (s) {
                 s.nextTurn(options.changes[s.id], game, result, function (cost, evs) {
-                    totalCost += cost;
+                    groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
                         doneSquires = doc.extended;
-                        complete(totalCost);
+                        complete(groupCost);
                     }
                 });
             });

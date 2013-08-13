@@ -49,20 +49,13 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
                 counter += 1;
                 if (counter >= defaultObjects.families.length) {
                     // done creating game object
-                    result.update(cb);
+                    result.save(cb);
                 }
             });
         });
     });
 
     return result;
-};
-
-GameSchema.methods.update = function (cb) {
-    "use strict";
-    this.save(cb);
-    
-    return this;
 };
 
 GameSchema.methods.satisfies = function (requirements) {
@@ -110,28 +103,13 @@ GameSchema.methods.getEvents = function (cb) {
     return this;
 };
 
-GameSchema.methods.mergeOptions = function (options, cb) {
-    "use strict";
-    this.families[0].mergeOptions(options, cb); // callback called through families
-
-    return this;
-};
-
-GameSchema.methods.endQuarter = function () {
-    "use strict";
-    var that = this;
-    
-    this.clearEvents();
-    this.families.forEach(function (f) {f.endQuarter(that.turn); });
-    
-    return this;
-};
-
 GameSchema.methods.nextTurn = function (options, cb) {
     "use strict";
     var that = this,
         nextSeason,
         nextYear = this.turn.year;
+
+    this.clearEvents();
 
     switch (this.turn.quarter) {
     case 'Winter':
@@ -193,7 +171,7 @@ GameSchema.methods.nextTurn = function (options, cb) {
                         that.turn.quarter = nextSeason;
                         that.turn.year = nextYear;
                         
-                        that.update(function (err, g) {
+                        that.save(function (err, g) {
                             passData.game = that;
                             if (cb) {cb(passData); }
                         });
