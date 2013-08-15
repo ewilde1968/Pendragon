@@ -138,7 +138,17 @@ CharacterSchema.methods.getEvents = function (turn, result) {
     }
     
     this.queuedEvents.forEach(function (e) {
+        var actions;
+        
         if (e.filterByTurn(turn, that.satisfies)) {
+            if (e.actions) {
+                actions = JSON.parse(e.actions);
+                if ('Locale' === actions.target) {
+                    actions.target = that.id;
+                }
+                e.actions = JSON.stringify(actions);
+            }
+
             result.push(e);
         }
     });
@@ -237,11 +247,10 @@ CharacterSchema.methods.cost = function (livingStandard) {
     return 0;
 };
 
-CharacterSchema.methods.nextTurn = function (options, game, evs, cb) {
+CharacterSchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
     var that = this,
         cost = 0;
-    evs = evs || [];
     
     that.mergeOptions(options);
     that.clearEvents(game.turn);
@@ -266,11 +275,9 @@ CharacterSchema.methods.nextTurn = function (options, game, evs, cb) {
         break;
     }
     
-    that.getEvents(game.turn, evs);
-    
     that.save(function (err) {
         if (err) {return err; }
-        cb(cost, evs);
+        cb(cost);
     });
 };
 

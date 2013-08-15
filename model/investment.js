@@ -74,13 +74,9 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
     return this;
 };
 
-InvestmentSchema.methods.harvest = function (stewardry) {
+InvestmentSchema.methods.harvest = function (check) {
     "use strict";
-    var d3 = function () {return Math.floor(Math.random() * 3); },
-        d2 = function () {return Math.floor(Math.random() * 2); },
-        weather = Skill.factory({name: 'Weather', level: d3() + d3() + d2()}),
-        check = stewardry.opposed(weather),
-        result = 0;
+    var result = 0;
     
     if (this.built && !this.damaged) {
         switch (check) {

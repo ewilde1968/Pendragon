@@ -85,14 +85,14 @@ var defaultObjects = {
                     label: 'Muster',
                     title: 'Captured',
                     message: 'Ride down the punks.',
-                    actions: {experience: 'Horsemanship'},
+                    actions: {experience: 'Horsemanship', target: 'patriarch'},
                     choices: [{label: 'Done'}]
                 },
                 {
                     label: 'Ignore',
                     title: 'Ignore Muster',
                     message: "The marshal leads your peers, the other young knights with whom you were trained, to flush out the bandits. They chase the fleeing bandits through your fields, capturing every last one of them. Your peers, the knights of Hertfordshire, view you as a coward for not daring to face the threat of bandits on your own holdings. Your peasants say nothing, looking sadly at their crops trampled by the knight's horses.",
-                    actions: {honor: -1},
+                    actions: {honor: -1, target: 'patriarch'},
                     choices: [{label: 'Ignominy'}]
                 }
             ]
@@ -108,14 +108,14 @@ var defaultObjects = {
             name: 'Faire',
             quarter: 'Summer',
             message: "Peasants, craftsmen and traders from villages for miles around crowd to your lands so to sell and buy all manner of wares.",
-            actions: {log: true, hate: -1},
+            actions: {hate: -1, target: 'Locale'},
             choices: [{label: 'Done'}]
         },
         {
             name: 'Tournament',
             quarter: 'Summer',
             message: "Doh!",
-            actions: {log: true, hate: -2},
+            actions: {hate: -2, target: 'Locale'},
             choices: [{label: 'Done'}]
         },
         {
@@ -152,14 +152,14 @@ var defaultObjects = {
             name: 'Mill Built',
             quarter: 'Fall',
             message: "Your peasants rest more easily this winter knowing the grainstocks are ground and stored away from molds.",
-            actions: {log: true, hate: -2},
+            actions: {hate: -2, target: 'Locale'},
             choices: [{label: 'Done'}]
         },
         {
             name: 'Ditch and Rampart Built',
             quarter: 'Fall',
             message: "The village elders nod in agreement with your wise choice. The women and livestock are more easily protected behind a wall.",
-            actions: {log: true, defense: 2},
+            actions: {defense: 2},
             choices: [{label: 'Done'}]
         },
         {
@@ -215,6 +215,20 @@ var defaultObjects = {
             name: 'Bee Fungus',
             quarter: 'Summer',
             message: "Doh!",
+            actions: {log: true},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Simmering Revolt',
+            title: 'Simmering Revolt',
+            message: 'Oh, bother.',
+            actions: {log: true},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Getting Crowded in this Fiefdom',
+            title: 'Steamy',
+            message: 'And stinky too.',
             actions: {log: true},
             choices: [{label: 'Done'}]
         }

@@ -18,7 +18,7 @@ var mongoose = require('mongoose'),
 var LocaleSchema = new Schema({
     name:           { type: String, required: true },
     projIncome:     Number,
-    harvests:       [{result: String, income: Number}],     // keep 5 years of harvest records for population growth
+    harvest:       {result: String, income: Number},
     cost:           Number,
     steward:        {stats: [Steward.schema], familyRef: ObjectId},
     investments:    [Investment.schema],
@@ -28,11 +28,12 @@ var LocaleSchema = new Schema({
     population:     {noncombatants: Number, militia: Number, archers: Number, karls: Number},
     train:          {militia: Number, archers: Number, karls: Number},
     hate:           Number,
+    quests:         {revolt: ObjectId, royal: ObjectId, fey: ObjectId, religious: ObjectId},
     queuedEvents:   [Storyline.schema]
 });
 
 
-LocaleSchema.statics.populateString = 'name projIncome harvests cost steward investments allowedInvests allowedFeasts taxes population train hate queuedEvents';
+LocaleSchema.statics.populateString = 'name projIncome harvest cost steward investments allowedInvests allowedFeasts taxes population train hate queuedEvents';
 
 
 LocaleSchema.statics.factory = function (template, cb) {
@@ -47,7 +48,7 @@ LocaleSchema.statics.factory = function (template, cb) {
                               militia: (Math.floor(Math.random() * 20) + 1) * 5,
                               karls: Math.floor(Math.random() * 6)
                              },
-                             hate: template.hate || 10
+                             hate: template.hate || 0
                             });
 
     defaultObjects.investments.forEach(function (i) {   // TODO only allow the right subset
@@ -93,7 +94,17 @@ LocaleSchema.methods.getEvents = function (turn, evs) {
     }
     
     this.queuedEvents.forEach(function (e) {
+        var actions;
+        
         if (e.filterByTurn(turn, that.satisfies)) {
+            if (e.actions) {
+                actions = JSON.parse(e.actions);
+                if ('Locale' === actions.target) {
+                    actions.target = that.id;
+                }
+                e.actions = JSON.stringify(actions);
+            }
+
             evs.push(e);
         }
     });
@@ -140,9 +151,10 @@ LocaleSchema.methods.addSteward = function (s) {
     return this;
 };
 
-LocaleSchema.methods.addFeast = function (f, evs, cb) {
+LocaleSchema.methods.addFeast = function (f, cb) {
     "use strict";
-    var qe = this.queuedEvents,
+    var that = this,
+        qe = this.queuedEvents,
         useCB = true;
 
     this.allowedFeasts.forEach(function (feast) {
@@ -153,7 +165,6 @@ LocaleSchema.methods.addFeast = function (f, evs, cb) {
 
                 if (ev) {
                     qe.push(ev);
-                    evs.push(ev);
                 }
 
                 if (cb) {cb(feast.cost); }
@@ -166,10 +177,70 @@ LocaleSchema.methods.addFeast = function (f, evs, cb) {
     return this;
 };
 
-LocaleSchema.methods.mergeOptions = function (options, evs, cb) {
+LocaleSchema.methods.changeHate = function (hate, cb) {
+    "use strict";
+    var that = this;
+    
+    this.hate += hate;
+
+    // check for hate-filled peasant 'quests' against the landlord
+    // only check when hate changes
+    if (!this.quests.revolt && (Math.floor(Math.random() * 20) + this.hate) >= 20) {
+        Storyline.find({name: 'Simmering Revolt'}, function (err, qA) {
+            if (err) {return err; }
+
+            qA.forEach(function (q) {
+                if (!that.quests.revolt && that.satisfies(q.requirements)) {
+                    that.quests.revolt = q;
+                    that.queuedEvents.push(q);
+                }
+            });
+                
+            if (cb) {cb(0); }
+        });
+    } else {
+        if (cb) {cb(0); }
+    }
+    
+    return this;
+};
+
+LocaleSchema.methods.growPopulations = function (amount, cb) {
+    "use strict";
+    var that = this;
+    
+    this.population.noncombatants += Math.floor(amount);
+    
+    if (!this.quests.revolt && (Math.floor(Math.random() * 200) + this.population.noncombatants) >= 1000) {
+        Storyline.find({name: 'Getting Crowded in this Fiefdom'}, function (err, qA) {
+            if (err) {return err; }
+
+            qA.forEach(function (q) {
+                if (!that.quests.revolt && that.satisfies(q.requirements)) {
+                    that.quests.revolt = q;
+                    that.queuedEvents.push(q);
+                }
+            });
+
+            if (cb) {cb(0); }
+        });
+    } else {
+        if (cb) {cb(0); }
+    }
+    
+    return this;
+};
+
+LocaleSchema.methods.mergeOptions = function (options, cb) {
     "use strict";
     var useCB = true,
-        totalCost = 0;
+        totalCost = 0,
+        doneMain = false,
+        doneFeast = !options || !options.festival,
+        doneHate = !options || !options.hate,
+        complete = function () {
+            if (doneHate && doneFeast && doneMain && cb) {cb(totalCost); }
+        };
 
     if (options) {
         if (options.build) {
@@ -187,18 +258,32 @@ LocaleSchema.methods.mergeOptions = function (options, evs, cb) {
                          };
         }
         
-        if (options.festival) {
-            useCB = false;
-            this.addFeast(options.festival, evs, function (cost) {
+        if (options.hate) {
+            this.changeHate(options.hate, function (cost) {
                 totalCost += cost;
-                if (cb) {cb(totalCost, evs); }
+                doneHate = true;
+                complete();
             });
         }
+        
+        if (options.festival) {
+            this.addFeast(options.festival, function (cost) {
+                totalCost += cost;
+                doneFeast = true;
+                complete();
+            });
+        }
+        
+        if (options.quests) {
+            this.quests.revolt = options.quests.revolt || this.quests.revolt;
+            this.quests.fey = options.quests.fey || this.quests.fey;
+            this.quests.religious = options.quests.religious || this.quests.religious;
+            this.quests.royal = options.quests.royal || this.quests.royal;
+        }
     }
-    
-    if (useCB && cb) {
-        cb(totalCost, evs);
-    }
+
+    doneMain = true;
+    complete();
     
     return this;
 };
@@ -208,9 +293,10 @@ LocaleSchema.methods.satisfies = function (requirements) {
     return true;
 };
 
-LocaleSchema.methods.determineYearEvents = function (evs, cb) {
+LocaleSchema.methods.determineYearEvents = function (cb) {
     "use strict";
-    var queue = this.queuedEvents,
+    var that = this,
+        queue = this.queuedEvents,
         counter = 0,
         limit = this.investments.length;
 
@@ -218,39 +304,53 @@ LocaleSchema.methods.determineYearEvents = function (evs, cb) {
         i.determineYearEvents(function (ev) {
             if (ev) {
                 queue.push(ev);
-                evs.push(ev);
             }
             
             counter += 1;
-            if (cb && counter === limit) {cb(evs); }
+            if (cb && counter === limit) {cb(); }
         });
     });
     
     if (this.investments === 0) {cb(); }
 };
 
-LocaleSchema.methods.calculateHarvest = function (cb) {
+LocaleSchema.methods.stewardCheck = function () {
     "use strict";
     var that = this,
         d3 = function () {return Math.floor(Math.random() * 3); },
         d2 = function () {return Math.floor(Math.random() * 2); },
         stewardry = that.steward.stats.length > 0 ? that.steward.stats[0].getSkill('Stewardry') : null,
         weather = Skill.factory({name: 'Weather', level: d3() + d3() + d2()}),
-        check = stewardry ? stewardry.opposed(weather) : 'Fumble',
+        check = stewardry ? stewardry.opposed(weather, 0, that.hate) : 'Fumble';
+    
+    return check;
+};
+
+LocaleSchema.methods.calculateHarvest = function (cb) {
+    "use strict";
+    var that = this,
+        check = that.stewardCheck(),
+        popGrowth = 0,
+        hateChange = (this.taxes - 6) / (this.population.noncombatants / 750),
         result;
 
     switch (check) {
     case 'Critical Success':
         result = this.taxes * 2;
+        popGrowth = this.population.noncombatants / 25 + Math.floor(Math.random() * 20);
+        // 750 noncombatants would fully support a normal manor home with thier taxes and remain content
         break;
     case 'Success':
         result = this.taxes;
+        popGrowth = this.population.noncombatants / 50 + Math.floor(Math.random() * 10);
         break;
     case 'Failure':
         result = Math.floor(that.taxes / 2);
+        popGrowth = Math.floor(Math.random() * 10);
         break;
     case 'Fumble':
         result = Math.floor(that.taxes / 4);
+        popGrowth = -this.population.noncombatants / 50 - Math.floor(Math.random() * 10);
         break;
     default:
         throw {
@@ -259,29 +359,28 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
         };
     }
     
-    if (that.harvests.length >= 5) {
-        that.harvests.pop();    // throw away harvest results after five years
-    }
-    that.harvests.unshift({result: check, income: result - that.cost});
-            
-    if (cb) {cb(stewardry); }
+    that.harvest = {result: check, income: result - that.cost};
+    that.growPopulations(popGrowth, function () {
+        if (cb) {cb(check); }
+    });
 
     return this;
 };
 
-LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
+LocaleSchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
     var that = this,
         totalCost = 0,
         complete = function () {
             that.save(function (err) {
                 if (err) {return err; }
-                if (cb) {cb(totalCost, evs); }
+                
+                if (cb) {cb(totalCost); }
             });
         };
 
     that.clearEvents(game.turn);
-    that.mergeOptions(options, evs, function (cost) {
+    that.mergeOptions(options, function (cost) {
         totalCost += cost;
     
         switch (game.turn.quarter) {
@@ -289,17 +388,14 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
             // TODO determine peasant population growth
             // TODO determine hatred fallout
             // determine holding events
-            that.determineYearEvents(evs, function () {
-                that.getEvents(game.turn, evs);
+            that.determineYearEvents(function () {
                 complete();
             });
             break;
         case "Spring":
-            that.getEvents(game.turn, evs);
             complete();
             break;
         case "Summer":
-            that.getEvents(game.turn, evs);
             complete();
             break;
         case "Fall":
@@ -309,7 +405,7 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
                 that.investments.forEach(function (i) {
                     // determine this year's investment income
                     if (i.built && !i.damaged && i.income) {
-                        that.harvests[0].income += i.harvest(stewardry);
+                        that.harvest.income += i.harvest(that.stewardCheck());
                     }
                     // determine investment completions
                     if (!i.built) {
@@ -324,8 +420,7 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
                 });
 
                 // TODO determine training results
-                totalCost += that.cost - that.harvests[0];
-                that.getEvents(game.turn, evs);
+                totalCost += that.cost - that.harvest;
                 complete();
             });
             break;
@@ -333,8 +428,6 @@ LocaleSchema.methods.nextTurn = function (options, game, evs, cb) {
             break;
         }
     });
-    
-    // callback called above, do not edit object below switch statement
 };
 
 

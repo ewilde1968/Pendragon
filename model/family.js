@@ -67,8 +67,11 @@ FamilySchema.statics.factory = function (template, settings, cb) {
 
 FamilySchema.methods.fatherHistory = function () {
     "use strict";
+    var that = this;
+    
     this.queuedEvents.push(Storyline.factory({
         name: 'Father History',
+        target: that.id,
         title: 'Tragedy!',
         message: "Your father died.",
         actions: {log: true},
@@ -223,7 +226,6 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     // see which events match the current turn and return
     // an array of all such Storyline objects
     var that = this,
-        result = [],
         totalCost = 0,
         doneLadies = 0 === that.ladies.length,
         doneBros = 0 === that.bros.length,
@@ -235,17 +237,7 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
             if (doneBros && doneHoldings && doneLadies && donePatriarch && doneSquires) {
                 that.cash -= totalCost;
                 that.save(function (err, doc) {
-                    if (cb) {
-                        cb({
-                            family: that,
-                            patriarch: donePatriarch,
-                            holdings: doneHoldings,
-                            bros: doneBros,
-                            ladies: doneLadies,
-                            extended: doneSquires,
-                            events: result
-                        });
-                    }
+                    if (cb) {cb(); }
                 });
             }
         };
@@ -264,8 +256,8 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
                   function (err, doc) {
             if (err) {return err; }
 
-            doc.patriarch[0].nextTurn(!options || options.changes[doc.patriarch[0].id], game, result, function (cost, evs) {
-                donePatriarch = doc.patriarch[0];
+            doc.patriarch[0].nextTurn(!options || options.changes[doc.patriarch[0].id], game, function (cost) {
+                donePatriarch = true;
                 complete(cost);
             });
         });
@@ -278,12 +270,12 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
 
             if (err) {return err; }
             doc.bros.forEach(function (b) {
-                b.nextTurn(!options || options.changes[b.id], game, result, function (cost, evs) {
+                b.nextTurn(!options || options.changes[b.id], game, function (cost) {
                     groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
-                        doneBros = doc.bros;
+                        doneBros = true;
                         complete(groupCost);
                     }
                 });
@@ -298,12 +290,12 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
 
             if (err) {return err; }
             doc.holdings.forEach(function (h) {
-                h.nextTurn(!options || options.changes[h.id], game, result, function (cost, evs) {
+                h.nextTurn(!options || options.changes[h.id], game, function (cost) {
                     groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
-                        doneHoldings = doc.holdings;
+                        doneHoldings = true;
                         complete(groupCost);
                     }
                 });
@@ -318,12 +310,12 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
 
             if (err) {return err; }
             doc.ladies.forEach(function (l) {
-                l.nextTurn(!options || options.changes[l.id], game, result, function (cost, evs) {
+                l.nextTurn(!options || options.changes[l.id], game, function (cost) {
                     groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
-                        doneLadies = doc.ladies;
+                        doneLadies = true;
                         complete(groupCost);
                     }
                 });
@@ -338,12 +330,12 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
                     
             if (err) {return err; }
             doc.extended.forEach(function (s) {
-                s.nextTurn(options.changes[s.id], game, result, function (cost, evs) {
+                s.nextTurn(options.changes[s.id], game, function (cost) {
                     groupCost += cost;
                 
                     counter += 1;
                     if (counter === limit) {
-                        doneSquires = doc.extended;
+                        doneSquires = true;
                         complete(groupCost);
                     }
                 });

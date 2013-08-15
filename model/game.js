@@ -23,7 +23,8 @@ var GameSchema = new Schema({
 
 GameSchema.statics.factory = function (settings, ownerId, cb) {
     "use strict";
-    var counter = 0,
+    var that = this,
+        counter = 0,
         result = new Game({owner: ownerId,
                            settings: settings,
                            turn: {year: 485, quarter: "Winter"}
@@ -35,6 +36,7 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
         if (err) {return err; }
                        
         evs.forEach(function (e) {
+            e.parent = that.id;
             result.queuedEvents.push(e);
         });
 
@@ -114,23 +116,27 @@ GameSchema.methods.nextTurn = function (options, cb) {
     switch (this.turn.quarter) {
     case 'Winter':
         // TODO determine peasant population growth
-        // TODO determine hatred fallout
+        // determine hatred fallout
         // determine holding events
+        // TODO steward advice
         // TODO determine pentacost court plans
+            // TODO who is in attendance
+            // TODO events
+            // TODO political opportunities
+            // TODO romance opportunities
         // TODO determine births
         nextSeason = 'Spring';
         break;
     case 'Spring':
         // TODO determine pentacost court results
         // TODO determine any marriages or daliances
-        // TODO determine campaign season plans
-        // TODO determine campaign season quests
+        // TODO determine campaign season
+        // TODO determine quests
         nextSeason = 'Summer';
         break;
     case 'Summer':
-        // TODO determine campaign season results
-        // TODO determine quest results
         // TODO determine pregnancies
+        // TODO campaign season results
         // TODO determine Christmas court plans
         nextSeason = 'Fall';
         break;
@@ -157,23 +163,18 @@ GameSchema.methods.nextTurn = function (options, cb) {
     that.populate({path: 'families', model: 'Family', select: Family.populateString},
                   function (err, doc) {
             var counter = 0,
-                l = doc.families.length,
-                passData;
+                l = doc.families.length;
                       
             doc.families.forEach(function (f, index) {
-                f.nextTurn(0 === index ? options : null, that, function (data) {
+                f.nextTurn(0 === index ? options : null, that, function () {
                     counter += 1;
-
-                    // only pass events for the  player's family
-                    if (0 === index) {passData = data; }
 
                     if (counter === l) {
                         that.turn.quarter = nextSeason;
                         that.turn.year = nextYear;
                         
                         that.save(function (err, g) {
-                            passData.game = that;
-                            if (cb) {cb(passData); }
+                            g.getEvents(cb);
                         });
                     }
                 });

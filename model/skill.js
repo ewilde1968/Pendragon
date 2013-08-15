@@ -54,31 +54,31 @@ SkillSchema.methods.experienceCheck = function () {
     return this;
 };
 
-SkillSchema.methods.check = function () {
+SkillSchema.methods.check = function (bonus) {
     "use strict";
-    var roll = Math.floor(Math.random() * 20 + 1);
+    var roll = Math.floor(Math.random() * 20 + 1 + bonus);
     
     if (this.level === 5) {
         if (roll >= 15) {
             return {result: 'Critical Success', roll: roll + 5};
         }
         return {result: 'Success', roll: roll + 5};
-    } else if (roll === this.level * 5) {
+    } else if (roll === this.level * 5 || (roll > 20 && ((roll - 20) + (roll % 20)) >= 20)) {
         return {result: 'Critical Success', roll: roll};
     } else if (roll < this.level * 5) {
         return {result: 'Success', roll: roll};
-    } else if (roll === 20) {
+    } else if ((roll - bonus) === 20) { // natural 20
         return {result: 'Fumble', roll: roll};
     }
     
     return {result: 'Failure', roll: roll};
 };
 
-SkillSchema.methods.opposed = function (enemySkill) {
+SkillSchema.methods.opposed = function (enemySkill, bonus, enemyBonus) {
     "use strict";
     var result,
-        enemyRoll = enemySkill.check(),
-        myRoll = this.check();
+        enemyRoll = enemySkill.check(enemyBonus || 0),
+        myRoll = this.check(bonus || 0);
     
     if (myRoll.result === enemyRoll.result) {
         result = (myRoll.roll >= enemyRoll.roll) ? 'Success' : 'Failure';

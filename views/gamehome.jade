@@ -55,7 +55,7 @@ block content
 
   if turnOnMenu
     script.
-      var changesObj = new Object(),
+      var changesObj = {},
           cash = #{family.cash};
       const skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
           statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
@@ -149,9 +149,19 @@ block content
       each holding in holdings
         if !holding.steward.familyRef
           mixin characterPage(holding.steward.stats[0])
-        .holdingDetailPage(class='notShown', id='#{holding.id}', data-projincome='#{holding.projIncome}')
+        .holdingDetailPage(class='notShown', id='#{holding.id}', data-projincome='#{holding.projIncome}', data-hate='#{holding.hate}')
           .statsView
             p.holdingName #{holding.name}
+            if holding.hate >= 20
+                p.hateDesc Peasants are in open revolt! Take your family to safety.
+            else if holding.hate >= 15
+                p.hateDesc Peasants are dangerous in groups or at night. Watch your back.
+            else if holding.hate >= 10
+                p.hateDesc Peasants are surly and lazy. Women and children run from your sight.
+            else if holding.hate >= 5
+                p.hateDesc Peasants are grumbling on again, as peasants are wont to do.
+            else
+                p.hateDesc Peasants are content.
             .holdingSteward
               p Steward
               mixin characterButton(holding.steward.stats[0])
@@ -161,10 +171,15 @@ block content
               each investment in holding.investments
                 if investment.built
                   - var c = 'built' + investment.damaged ? ' damaged' : '';
-                  - sum += investment.damaged ? 0 : investment.income;
+                  - var i = investment.damaged ? 0 : investment.income;
+                  - sum += i;
                 else
                   - var c = 'notbuilt' + investment.damaged ? ' damaged' : '';
-                p(class=c) #{investment.name}
+                
+                button.investmentDetailButton(data-id='#{investment.id}', class=c)
+                    p #{investment.name}
+                    if investment.income
+                      p Income: #{investment.income}£
               p.investmentIncome(data-sum='#{sum}') Investment Income: #{sum}£
               button.makeInvestment Make Investment
             p.holdingCost(data-sum='#{holding.cost}') Cost to run estate: #{holding.cost}£
@@ -353,10 +368,10 @@ block content
         // *******************************************
         // characterDetailPage
         // *******************************************
-        var changeStat = function (stat, changeVal) {
-            var spanE = $('#' + '#{patriarch.id} .' + stat + ' .statValue'),
+        var changeStat = function (stat, changeVal, target) {
+            var spanE = $('#' + target + ' .' + stat + ' .statValue'),
                 val = spanE.data('value') + changeVal,
-                cObj = changesObj['#{patriarchid}'] || new Object(),
+                cObj = changesObj[target] || {},
                 descs = (stat === 'honor') ? honorDescA : statDescA;
 
             if (val < 0) {val = 0; }
@@ -366,7 +381,7 @@ block content
             spanE.data('value', val);
 
             cObj[stat] = val;
-            changesObj['#{patriarch.id}'] = cObj;
+            changesObj[target] = cObj;
         };
         
 
@@ -374,32 +389,37 @@ block content
         // eventDetailPage
         // *******************************************
         var performAction = function (ev) {
-            var action = ev.data('action');
+            var action = ev.data('action'),
+                target = action && action.target;
+                
             if (action && action !== 'undefined') {
+                if ("patriarch" === target) {
+                    target = '#{patriarch.id}';
+                }
+
                 for (prop in action) {
                     if (action.hasOwnProperty(prop)) {
                         switch (prop) {
                             case 'experience':
-                                var cObj = changesObj['#{patriarch.id}'] || new Object(),
-                                    expObj = cObj['experience'] || new Array();
+                                var cObj = changesObj[target] || {},
+                                    expObj = cObj['experience'] || [];
 
                                 if (expObj.indexOf(action[prop]) === -1) {expObj.push(action[prop]); }
 
                                 cObj['experience'] = expObj;
-                                changesObj['#{patriarch.id}'] = cObj;
+                                changesObj[target] = cObj;
                                 break;
                             case 'honor':
-                                changeStat( prop, action[prop]);
+                                changeStat(prop, action[prop], target);
                                 break;
                             case 'cash':
-                                var cObj = changesObj['cash'] || new Object();
-
                                 cash += action[prop];
-
-                                cObj = cash;
                                 changesObj.cash = cash;
-                                
                                 $('#cashOnHand').text( 'Cash ' + cash + '£');
+                                break;
+                            case 'hate':
+                                // do not reflect hate changes this quarter in peasant status
+                                changeHate(prop, action[prop], target);
                                 break;
                             case 'log':
                             default:
@@ -458,6 +478,20 @@ block content
         $('.changeSteward').click(function (ev) {
             ev.preventDefault();    // TODO
         });
+        $('.investmentDetailButton').click(function (ev) {
+            ev.preventDefault();
+            // TODO showPage( '#' + $(this).data('id'));
+        });
+        
+        var changeHate = function(prop, val, target) {
+            var tObj = $('#' + target),
+                hate = tObj.data('hate') + val,
+                hObj = changesObj[target] || {};
+
+            tObj.data('hate', hate);
+            hObj.hate = hate;
+            changesObj[target] = hObj;
+        };
 
         var setHoldingView = function(t, toShow) {
             var pg = t.parent().parent(),
@@ -474,7 +508,7 @@ block content
         };
 
         var setBuildSelection = function(id, make) {
-            var hObj = changesObj[id] || new Object(),
+            var hObj = changesObj[id] || {},
                 ce = $('#' + id + ' .holdingCost'),
                 selItem = $('#' + id + ' .buildView input:checked'),
                 cost = ce.data('sum');
@@ -498,7 +532,7 @@ block content
         };
 
         var setFestivalSelection = function(id, make) {
-            var hObj = changesObj[id] || new Object(),
+            var hObj = changesObj[id] || {},
                 ce = $('#' + id + ' .holdingCost'),
                 selItem = $('#' + id + ' .festivalView input:checked'),
                 cost = ce.data('sum');
@@ -567,7 +601,7 @@ block content
                 ii = parseInt($('#' + id + ' .investmentIncome').data('sum'), 10),
                 val = parseInt($(this).val(), 10),
                 total = val + ii,
-                hObj = changesObj[id] || new Object();
+                hObj = changesObj[id] || {};
 
             $('.taxLevel p').text(val + '£');
             $('.' + id + ' .holdingProjIncome').text( 'Projected Income: ' + total + '£');
@@ -582,7 +616,7 @@ block content
         $('.trainView input').change(function (ev) {
             var pg = $(this).parent().parent().parent(),
                 id = pg.attr('id'),
-                hObj = changesObj[id] || new Object(),
+                hObj = changesObj[id] || {},
                 pm = $('#' + id + 'trainMilitia'),
                 pa = $('#' + id + 'trainArchers'),
                 pk = $('#' + id + 'trainKarls'),

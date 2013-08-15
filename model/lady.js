@@ -54,7 +54,7 @@ LadySchema.methods.increaseAge = function () {
     return this;
 };
 
-LadySchema.methods.nextTurn = function (options, game, evs, cb) {
+LadySchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
     switch (game.turn.quarter) {
     case "Winter":
@@ -72,8 +72,8 @@ LadySchema.methods.nextTurn = function (options, game, evs, cb) {
         };
     }
 
-    Character.nextTurn.apply(this, [options, game, evs, function (evs, cost) {
-        if (cb) {cb(cost, evs); }
+    Character.nextTurn.apply(this, [options, game, function (cost) {
+        if (cb) {cb(cost); }
     }]);
 };
 
