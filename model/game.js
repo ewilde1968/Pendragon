@@ -115,7 +115,6 @@ GameSchema.methods.nextTurn = function (options, cb) {
 
     switch (this.turn.quarter) {
     case 'Winter':
-        // TODO determine peasant population growth
         // determine hatred fallout
         // determine holding events
         // TODO steward advice
@@ -143,9 +142,10 @@ GameSchema.methods.nextTurn = function (options, cb) {
     case 'Fall':
         // age each character a year
         // determine harvest results
+        // peasant population growth
         // determine next year's projected income
         // determine investment completions
-        // TODO determine training results
+        // TODO determine training results - Up Next!
         // experience checks for all family members
         // TODO determine generosity results
         // TODO determine Christmas court results
