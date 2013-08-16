@@ -331,6 +331,7 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
     var that = this,
         check = that.stewardCheck(),
         popGrowth = 0,
+        // 750 noncombatants would fully support a normal manor home with thier taxes and remain content
         hateChange = (this.taxes - 6) / (this.population.noncombatants / 750),
         result;
 
@@ -338,7 +339,6 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
     case 'Critical Success':
         result = this.taxes * 2;
         popGrowth = this.population.noncombatants / 25 + Math.floor(Math.random() * 20);
-        // 750 noncombatants would fully support a normal manor home with thier taxes and remain content
         break;
     case 'Success':
         result = this.taxes;
@@ -359,11 +359,71 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
         };
     }
     
-    that.harvest = {result: check, income: result - that.cost};
+    that.harvest = {result: check, income: result};
     that.growPopulations(popGrowth, function () {
         if (cb) {cb(check); }
     });
 
+    return this;
+};
+
+LocaleSchema.methods.performTraining = function () {
+    "use strict";
+    var that = this,
+        cost = 0,
+        calc;
+    
+    // Can train any militiaman to be an archer
+    // up to 1/3 of existing militia force per year, 1 lb per archer
+    if (this.train.archers > 0) {
+        calc = Math.floor(this.population.militia / 3);
+        calc = this.train.archers > calc ? calc : this.train.archers;
+        this.population.archers += calc;
+        this.population.militia -= calc;
+        
+        cost += this.train.archers;
+    }
+
+    // A locale can support up to 1 militiaman (or archer) per 10 noncombatants
+    // 2 lbs will train and equip up to 50 militiamen
+    if (this.train.militia > 0) {
+        calc = Math.floor((this.population.noncombatants - this.population.archers) / 11 - this.population.militia);
+        if (2 === this.train.militia) {
+            calc = calc > 50 ? 50 : calc;
+        } else {
+            calc = calc > 25 ? 25 : calc;
+        }
+        this.population.militia += calc;
+        this.population.noncombatants -= calc;
+        
+        cost += this.train.militia;
+    }
+
+    // A locale can support up to 1 karl per 100 noncombatants, though it is possible
+    // to generate a locale with more karls at start
+    // 10 lbs will train and equip 1 karl
+    if (this.train.karls > 0) {
+        calc = Math.floor(Math.max(this.population.noncombatants / 100, this.train.karls / 10));
+        calc = calc > this.population.militia ? this.population.militia : calc;
+        this.population.karls += calc;
+        this.population.militia -= calc;
+        
+        cost += this.train.karls;
+    }
+    
+    return cost;
+};
+
+LocaleSchema.methods.calculateProjectedIncome = function () {
+    "use strict";
+    var proj = this.taxes;
+
+    this.investments.forEach(function (i) {
+        if (i.built && !i.damaged && i.income) {proj += i.income; }
+    });
+    
+    this.projIncome = proj;
+    
     return this;
 };
 
@@ -372,9 +432,11 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
     var that = this,
         totalCost = 0,
         complete = function () {
+            // update projected income every turn
+            that.calculateProjectedIncome();
+            
             that.save(function (err) {
                 if (err) {return err; }
-                
                 if (cb) {cb(totalCost); }
             });
         };
@@ -382,7 +444,7 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
     that.clearEvents(game.turn);
     that.mergeOptions(options, function (cost) {
         totalCost += cost;
-    
+        
         switch (game.turn.quarter) {
         case "Winter":
             // TODO determine peasant population growth
@@ -396,12 +458,15 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
             complete();
             break;
         case "Summer":
+            // determine training results
+            totalCost += that.performTraining();
             complete();
             break;
         case "Fall":
             // determine harvest results
             that.calculateHarvest(function (stewardry) {
-                that.projIncome = that.taxes;
+                totalCost += that.cost;
+                
                 that.investments.forEach(function (i) {
                     // determine this year's investment income
                     if (i.built && !i.damaged && i.income) {
@@ -412,15 +477,9 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
                         i.built = true;
                         that.cost += i.maintenance;
                     }
-
-                    // determine next year's projected income
-                    if (i.built && !i.damaged && i.income) {
-                        that.projIncome += i.income;
-                    }
                 });
 
-                // TODO determine training results
-                totalCost += that.cost - that.harvest;
+                totalCost -= that.harvest.income;
                 complete();
             });
             break;

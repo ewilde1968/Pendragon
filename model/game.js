@@ -123,7 +123,7 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // TODO events
             // TODO political opportunities
             // TODO romance opportunities
-        // TODO determine births
+        // TODO determine family births
         nextSeason = 'Spring';
         break;
     case 'Spring':
@@ -134,6 +134,7 @@ GameSchema.methods.nextTurn = function (options, cb) {
         nextSeason = 'Summer';
         break;
     case 'Summer':
+        // determine training results
         // TODO determine pregnancies
         // TODO campaign season results
         // TODO determine Christmas court plans
@@ -145,7 +146,6 @@ GameSchema.methods.nextTurn = function (options, cb) {
         // peasant population growth
         // determine next year's projected income
         // determine investment completions
-        // TODO determine training results - Up Next!
         // experience checks for all family members
         // TODO determine generosity results
         // TODO determine Christmas court results

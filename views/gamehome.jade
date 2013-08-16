@@ -207,7 +207,7 @@ block content
             p How much do you spend training?
             - var militiaTrainMax = (holding.population.noncombatants/5 - holding.population.militia - holding.population.archers) > 0 ? 2 : 0;
             - var archerTrainMax = Math.floor(holding.population.militia / 3);
-            - var karlTrainMax = Math.floor(holding.population.noncombatants / 50) - holding.population.karls;
+            - var karlTrainMax = (Math.floor(holding.population.noncombatants / 100) - holding.population.karls) * 10;
             .militiaTraining
               label(for='#{holding.id}trainMilitia') Militia (#{holding.population.militia})
               input(type='range', name='#{holding.id}trainMilitia', value='0', max='#{militiaTrainMax}', data-cost='0')
@@ -218,7 +218,7 @@ block content
               p(id='#{holding.id}trainArchers') 0£
             .karlTraining
               label(for='#{holding.id}trainKarls') Karls (#{holding.population.karls})
-              input(type='range', name='#{holding.id}trainKarls', value='0', max='#{karlTrainMax}', data-cost='0')
+              input(type='range', name='#{holding.id}trainKarls', value='0', max='#{karlTrainMax}', step='10', data-cost='0')
               p(id='#{holding.id}trainKarls') 0£
             button OK
           .festivalView(class='notShown')
