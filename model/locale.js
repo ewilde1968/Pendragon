@@ -17,6 +17,7 @@ var mongoose = require('mongoose'),
 
 var LocaleSchema = new Schema({
     name:           { type: String, required: true },
+    landlord:       [{ type: ObjectId, ref: 'Family' }],
     projIncome:     Number,
     harvest:       {result: String, income: Number},
     cost:           Number,
@@ -28,17 +29,15 @@ var LocaleSchema = new Schema({
     population:     {noncombatants: Number, militia: Number, archers: Number, karls: Number},
     train:          {militia: Number, archers: Number, karls: Number},
     hate:           Number,
-    quests:         {revolt: ObjectId, royal: ObjectId, fey: ObjectId, religious: ObjectId},
+    quest:          [Storyline.schema], //{revolt: ObjectId, royal: ObjectId, fey: ObjectId, religious: ObjectId},
     queuedEvents:   [Storyline.schema]
 });
-
-
-LocaleSchema.statics.populateString = 'name projIncome harvest cost steward investments allowedInvests allowedFeasts taxes population train hate queuedEvents';
 
 
 LocaleSchema.statics.factory = function (template, cb) {
     "use strict";
     var result = new Locale({name: template.name,
+                             landlord: template.landlord ? [template.landlord] : null,
                              projIncome: template.projIncome || 6,
                              cost: 1,
                              taxes: template.taxes || 6,
@@ -183,15 +182,15 @@ LocaleSchema.methods.changeHate = function (hate, cb) {
     
     this.hate += hate;
 
-    // check for hate-filled peasant 'quests' against the landlord
+    // check for hate-filled peasant 'quest' against the landlord
     // only check when hate changes
-    if (!this.quests.revolt && (Math.floor(Math.random() * 20) + this.hate) >= 20) {
-        Storyline.find({name: 'Simmering Revolt'}, function (err, qA) {
+    if (!this.quest && (Math.floor(Math.random() * 20) + this.hate) >= 20) {
+        Storyline.find({name: 'revolt'}, function (err, qA) {
             if (err) {return err; }
 
             qA.forEach(function (q) {
-                if (!that.quests.revolt && that.satisfies(q.requirements)) {
-                    that.quests.revolt = q;
+                if (!that.quest && that.satisfies(q.requirements)) {
+                    that.quest = q;
                     that.queuedEvents.push(q);
                 }
             });
@@ -211,13 +210,13 @@ LocaleSchema.methods.growPopulations = function (amount, cb) {
     
     this.population.noncombatants += Math.floor(amount);
     
-    if (!this.quests.revolt && (Math.floor(Math.random() * 200) + this.population.noncombatants) >= 1000) {
-        Storyline.find({name: 'Getting Crowded in this Fiefdom'}, function (err, qA) {
+    if (!this.quest && (Math.floor(Math.random() * 200) + this.population.noncombatants) >= 1000) {
+        Storyline.find({name: 'population'}, function (err, qA) {
             if (err) {return err; }
 
             qA.forEach(function (q) {
-                if (!that.quests.revolt && that.satisfies(q.requirements)) {
-                    that.quests.revolt = q;
+                if (!that.quest && that.satisfies(q.requirements)) {
+                    that.quest = q;
                     that.queuedEvents.push(q);
                 }
             });
@@ -231,6 +230,12 @@ LocaleSchema.methods.growPopulations = function (amount, cb) {
     return this;
 };
 
+LocaleSchema.methods.changeQuest = function (quest, cb) {
+    "use strict";
+    var that = this;
+    
+};
+
 LocaleSchema.methods.mergeOptions = function (options, cb) {
     "use strict";
     var useCB = true,
@@ -238,8 +243,9 @@ LocaleSchema.methods.mergeOptions = function (options, cb) {
         doneMain = false,
         doneFeast = !options || !options.festival,
         doneHate = !options || !options.hate,
+        doneQuest = !options || !options.quest,
         complete = function () {
-            if (doneHate && doneFeast && doneMain && cb) {cb(totalCost); }
+            if (doneHate && doneFeast && doneMain && doneQuest && cb) {cb(totalCost); }
         };
 
     if (options) {
@@ -274,11 +280,13 @@ LocaleSchema.methods.mergeOptions = function (options, cb) {
             });
         }
         
-        if (options.quests) {
-            this.quests.revolt = options.quests.revolt || this.quests.revolt;
-            this.quests.fey = options.quests.fey || this.quests.fey;
-            this.quests.religious = options.quests.religious || this.quests.religious;
-            this.quests.royal = options.quests.royal || this.quests.royal;
+        if (options.quest) {
+            this.changeQuest(options.quest, function (cost) {
+                totalCost += cost;
+                doneQuest = true;
+                complete();
+            });
+            this.quest = options.quest || this.quest;
         }
     }
 

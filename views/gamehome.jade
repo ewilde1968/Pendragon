@@ -1,7 +1,7 @@
 extends layout
 
 block content
-  - var turnOnMenu = game && game.families[0];
+  - var turnOnMenu = game && game.playerFamily;
   - var skillDescriptionsA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'];
   - var statDescriptionsA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'];
   - var honorDescriptionsA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
@@ -122,12 +122,6 @@ block content
       #charactersPage(class='notShown')
         #characters
           mixin characterButton(patriarch)
-          each bro in bros
-            mixin characterButton(bro)
-          each lady in ladies
-            mixin characterButton(lady)
-          each squire in extended
-            mixin characterButton(squire)
       #mapPage(class='notShown')
       #courtPage(class='notShown')
         if game.turn.quarter === 'Winter'
@@ -140,12 +134,6 @@ block content
           p Christmas Court
       #historyPage(class='notShown')
       mixin characterPage(patriarch)
-      each bro in bros
-        mixin characterPage(bro)
-      each lady in ladies
-        mixin characterPage(lady)
-      each squire in extended
-        mixin characterPage(squire)
       each holding in holdings
         if !holding.steward.familyRef
           mixin characterPage(holding.steward.stats[0])

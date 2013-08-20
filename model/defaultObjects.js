@@ -4,15 +4,41 @@ var defaultObjects = {
     families: [
         {
             name: 'Langley',
+            rank: 'Knight',
+            liege: "d'Hertford",
             locale: {name: 'Langley Valley'}
         },
         {
             name: 'Chesham',
+            rank: 'Knight',
+            liege: "Berkhamstead",
             locale: {name: 'Chesham'}
         },
         {
             name: 'Harpenden',
+            rank: 'Knight',
+            liege: "d'Hertford",
             locale: {name: 'Harpenden Wood'}
+        }
+    ],
+    nonPlayerFamilies: [
+        {
+            name: 'Berkhamstead',
+            rank: 'Knight Banneret',
+            liege: "d'Hertford",
+            locale: {name: 'Berkhamstead'}
+        },
+        {
+            name: 'Hemel Hempstead',
+            rank: 'Knight Banneret',
+            liege: "d'Hertford",
+            locale: {name: 'Hemel Hempstead'}
+        },
+        {
+            name: "d'Hertford",
+            rank: 'Earl',
+            liege: "Pendragon",
+            locale: {name: 'Hertford'}
         }
     ],
     investments: [
@@ -219,16 +245,23 @@ var defaultObjects = {
             choices: [{label: 'Done'}]
         },
         {
-            name: 'Simmering Revolt',
+            name: 'revolt',
             title: 'Simmering Revolt',
             message: 'Oh, bother.',
             actions: {log: true},
             choices: [{label: 'Done'}]
         },
         {
-            name: 'Getting Crowded in this Fiefdom',
+            name: 'population',
             title: 'Steamy',
             message: 'And stinky too.',
+            actions: {log: true},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Angry',
+            title: 'Feud',
+            message: 'And deadly too.',
             actions: {log: true},
             choices: [{label: 'Done'}]
         }

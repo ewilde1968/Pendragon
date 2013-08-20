@@ -39,9 +39,6 @@ var CharacterSchema = new Schema({
 }, {collection: 'characters', discriminatorKey: '_type' });
 
 
-CharacterSchema.statics.populateString = 'name profession age health body mind soul honor skills armor shield queuedEvents';
-
-
 CharacterSchema.statics.factory = function (template) {
     "use strict";
     var result = new Character(template);

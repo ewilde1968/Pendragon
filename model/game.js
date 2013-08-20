@@ -14,21 +14,34 @@ var mongoose = require('mongoose'),
 
 var GameSchema = new Schema({
     owner:          { type: ObjectId, required: true },
+    playerFamily:   ObjectId,
     settings:       Object,
-    families:       [{ type: ObjectId, ref: 'Family'}],
     turn:           { year: Number, quarter: String },
     queuedEvents:   [Storyline.schema]
 });
+
+// in order to avoid 1:many querries
+//      Families of game are queried via game of the family
 
 
 GameSchema.statics.factory = function (settings, ownerId, cb) {
     "use strict";
     var that = this,
-        counter = 0,
+        counterNPF = 0,
+        limitNPF = defaultObjects.nonPlayerFamilies.length,
+        doneNPF = limitNPF === 0,
+        counterPF = 0,
+        limitPF = defaultObjects.families.length,
+        donePF = limitPF === 0,
         result = new Game({owner: ownerId,
                            settings: settings,
                            turn: {year: 485, quarter: "Winter"}
-                          });
+                          }),
+        complete = function () {
+            if (doneNPF && donePF) {
+                result.save(cb);
+            }
+        };
 
     Storyline.find({year: result.turn.year,
                     quarter: result.turn.quarter
@@ -40,22 +53,36 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
             result.queuedEvents.push(e);
         });
 
+        defaultObjects.nonPlayerFamilies.forEach(function (template) {
+            template.game = result.id;
+
+            Family.factory(template, settings, function (f) {
+                counterNPF += 1;
+                if (counterNPF >= limitNPF) {
+                    doneNPF = true;
+                    complete();
+                }
+            });
+        });
+
         defaultObjects.families.forEach(function (template) {
+            template.game = result.id;
+
             Family.factory(template, settings, function (f) {
                 if (settings.family === f.name) {
-                    result.families.unshift(f.id);      // player is always the zeroeth element
-                } else {
-                    result.families.push(f.id);
+                    result.playerFamily = f.id;
                 }
                 
-                counter += 1;
-                if (counter >= defaultObjects.families.length) {
-                    // done creating game object
-                    result.save(cb);
+                counterPF += 1;
+                if (counterPF >= limitPF) {
+                    donePF = true;
+                    complete();
                 }
             });
         });
     });
+
+    complete();
 
     return result;
 };
@@ -94,7 +121,7 @@ GameSchema.methods.getEvents = function (cb) {
     });
 
     // only get events for the player's family
-    Family.findById(this.families[0], function (err, doc) {
+    Family.findById(this.playerFamily, function (err, doc) {
         if (err) {return err; }
         doc.getEvents(that, result, function (data) {
             data.game = that;
@@ -118,7 +145,7 @@ GameSchema.methods.nextTurn = function (options, cb) {
         // determine hatred fallout
         // determine holding events
         // TODO steward advice
-        // TODO determine pentacost court plans
+        // TODO determine pentacost court plans - Up Next!
             // TODO who is in attendance
             // TODO events
             // TODO political opportunities
@@ -160,26 +187,25 @@ GameSchema.methods.nextTurn = function (options, cb) {
         };
     }
     
-    that.populate({path: 'families', model: 'Family', select: Family.populateString},
-                  function (err, doc) {
-            var counter = 0,
-                l = doc.families.length;
-                      
-            doc.families.forEach(function (f, index) {
-                f.nextTurn(0 === index ? options : null, that, function () {
-                    counter += 1;
+    Family.find({game: that.id}, function (err, families) {
+        var counter = 0,
+            l = families.length;
 
-                    if (counter === l) {
-                        that.turn.quarter = nextSeason;
-                        that.turn.year = nextYear;
+        families.forEach(function (f) {
+            f.nextTurn(f.id === String(that.playerFamily) ? options : null, that, function () {
+                counter += 1;
+
+                if (counter === l) {
+                    that.turn.quarter = nextSeason;
+                    that.turn.year = nextYear;
                         
-                        that.save(function (err, g) {
-                            g.getEvents(cb);
-                        });
-                    }
-                });
+                    that.save(function (err, g) {
+                        g.getEvents(cb);
+                    });
+                }
             });
         });
+    });
 
     return this;
 };
