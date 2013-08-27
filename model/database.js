@@ -9,7 +9,8 @@ var Database; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     defaultObjects = require('./defaultObjects'),
-    Storyline = require('./storyline');
+    Storyline = require('./storyline'),
+    Court = require('./court');
 
 var connected = false;
 var database = function (databaseName) {
@@ -40,12 +41,22 @@ var database = function (databaseName) {
             
             if (!doc) {
                 // Items in the database include:
-                //    - events for investments
-                var eventTree = [];
+                //    - events
+                var eventTree = [],
+                    courtTree = [];
+                
                 defaultObjects.eventTree.forEach(function (e) {
                     eventTree.push(Storyline.factory(e));
                 });
                 Storyline.create(eventTree, function (err) {
+                    if (err) {return err; }
+                });
+                
+                //      - courts
+                defaultObjects.courts.forEach(function (c) {
+                    courtTree.push(Court.factory(c));
+                });
+                Court.create(courtTree, function (err) {
                     if (err) {return err; }
                 });
             }

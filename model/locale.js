@@ -369,7 +369,9 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
     
     that.harvest = {result: check, income: result};
     that.growPopulations(popGrowth, function () {
-        if (cb) {cb(check); }
+        that.changeHate(hateChange, function () {
+            if (cb) {cb(check); }
+        });
     });
 
     return this;

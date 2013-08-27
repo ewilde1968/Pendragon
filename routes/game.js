@@ -15,7 +15,7 @@ exports.newGame = function (req, res, next) {
     "use strict";
     res.render('initialsettings',
                {accountId: req.params.userid,
-                families: defaultObjects.families
+                families: defaultObjects.sirFamilies
                });
 
 };

@@ -23,6 +23,7 @@ var FamilySchema = new Schema({
     game:           ObjectId,
     patriarch:      ObjectId,   // Knight
     liege:          ObjectId,   // Family
+    king:           ObjectId,   // Family
     rank:           String,
     ladies:         [{ type: ObjectId, ref: 'Lady' }],      // important women of all stations in the family
     extended:       [{ type: ObjectId, ref: 'Squire' }],    // nobles of other persuasions, usually trained, some karls
@@ -87,9 +88,9 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     }
     
     if (template.liege && typeof template.liege === 'string') {
-        Family.find({game: template.game, name: template.liege}, function (err, doc) {
+        Family.findOne({game: template.game, name: template.liege}, function (err, doc) {
             if (err) {return err; }
-            if (doc) {result.leige = doc.id; }
+            if (doc) {result.liege = doc.id; }
             
             doneLiege = true;
             complete();
@@ -298,6 +299,25 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     return this;
 };
 
+FamilySchema.methods.findKing = function (cb) {
+    "use strict";
+    var that = this;
+    
+    if (that.king) {
+        cb(that.king);
+    } else {
+        if ("King" === that.rank || "Emporer" === that.rank) {
+            that.king = that.id;
+            cb(that.id);
+        } else {
+            Family.findById(that.liege, function (err, l) {
+                if (err) {return err; }
+                
+                if (l) {l.findKing(cb); } else if (cb) {cb(); }
+            });
+        }
+    }
+};
 
 
 var Family = mongoose.model('Family', FamilySchema);
