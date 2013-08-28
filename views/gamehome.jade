@@ -124,16 +124,19 @@ block content
           mixin characterButton(patriarch)
       #mapPage(class='notShown')
       #courtPage(class='notShown')
-        if game.turn.quarter === 'Winter'
-          p No Winter Court
-        if game.turn.quarter === 'Spring'
-          p Pentacost Court
-        if game.turn.quarter === 'Summer'
-          p No Summer Court
-        if game.turn.quarter === 'Fall'
-          p Christmas Court
-      #historyPage(class='notShown')
+        if court
+          #news
+          #attendees
+            each attendee in court.guests
+              mixin characterButton(attendee)
+          #schedule
+        else
+          p No court in session this season.
+      if court
+        each attendee in court.guests
+          mixin characterPage(attendee)
       mixin characterPage(patriarch)
+      #historyPage(class='notShown')
       each holding in holdings
         if !holding.steward.familyRef
           mixin characterPage(holding.steward.stats[0])

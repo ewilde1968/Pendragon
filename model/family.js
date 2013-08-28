@@ -26,7 +26,7 @@ var FamilySchema = new Schema({
     king:           ObjectId,   // Family
     rank:           String,
     ladies:         [{ type: ObjectId, ref: 'Lady' }],      // important women of all stations in the family
-    extended:       [{ type: ObjectId, ref: 'Squire' }],    // nobles of other persuasions, usually trained, some karls
+    extended:       [{ type: ObjectId, ref: 'Squire' }],    // other family members, may be trained or knighted
     politics:       [Politics.schema],                      // references to other families
     cash:           Number,
     specialty:      String,
@@ -49,11 +49,12 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                              generosity: template.generosity || 0,
                              livingStandard: template.livingStandard || 'Normal'
                             }),
-        donePatriarch = template.patriarch,
+        donePatriarch = false,
         doneLocale = !template.locale,
         doneLiege = !template.liege,
+        countExtended = template.extended ? template.extended.length : 0,
         complete = function () {
-            if (donePatriarch && doneLiege && doneLocale) {
+            if (0 === countExtended && donePatriarch && doneLiege && doneLocale) {
                 result.save(function (err, doc) {
                     if (err) {return err; }
                     if (cb) {cb(doc); }
@@ -64,12 +65,10 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     result.generateSpecialty()
         .fatherHistory();
 
-    if (template.patriarch) {
-        result.patriarch = template.patriarch;
-    } else {
-        Knight.factory({name: 'first knight',
-                        profession: 'Knight'
-                       }, function (err, firstKnight) {
+    Knight.factory({name: template.patriarch || 'first knight',
+                    profession: 'Knight'
+                   }, template.game,
+                   function (err, firstKnight) {
             var locale;
             if (err) {return err; }
 
@@ -77,7 +76,6 @@ FamilySchema.statics.factory = function (template, settings, cb) {
             donePatriarch = true;
             complete();
         }, true);
-    }
     
     if (template.locale) {
         template.locale.landlord = result.id;
@@ -98,6 +96,18 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     } else {
         result.leige = template.liege;
         doneLiege = true;
+    }
+    
+    if (template.extended) {
+        template.extended.forEach(function (ex) {
+            Squire.factory(ex, template.game, function (err, s) {
+                if (err) {return err; }
+                
+                result.extended.addToSet(s);
+                countExtended -= 1;
+                complete();
+            });
+        });
     }
     
     complete();

@@ -35,25 +35,28 @@ var CharacterSchema = new Schema({
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
     parents:        [ObjectId],
+    game:           ObjectId,
     queuedEvents:   [Storyline.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
 
 
-CharacterSchema.statics.factory = function (template) {
+CharacterSchema.statics.factory = function (template, game) {
     "use strict";
     var result = new Character(template);
-    this.initialize(template);
-
+    this.initialize(template, game);
+    
     return result;
 };
 
-CharacterSchema.methods.initialize = function (template) {
+CharacterSchema.methods.initialize = function (template, game) {
     "use strict";
     if (!template.mind || !template.body || !template.soul) {
         this.generateStats();   // TODO find inheretance pattern
     }
     
     if (template.age >= 14) {this.fertility = true; }
+    
+    if (game) {this.game = game; }
     
     return this;
 };

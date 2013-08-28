@@ -15,10 +15,10 @@ var KnightSchema = Character.schema.extend({
 });
 
 
-KnightSchema.statics.factory = function (template, cb, firstKnight) {
+KnightSchema.statics.factory = function (template, game, cb, firstKnight) {
     "use strict";
     var result = new Knight(template);
-    result.initialize(template);
+    result.initialize(template, game);
 
     result.profession = 'Knight';
 

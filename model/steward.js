@@ -19,10 +19,10 @@ var StewardSchema = Character.schema.extend({
 });
 
 
-StewardSchema.statics.factory = function (template) {
+StewardSchema.statics.factory = function (template, game) {
     "use strict";
     var result = new Steward(template);
-    result.initialize(template);
+    result.initialize(template, game);
 
     result.profession = 'Steward';
 

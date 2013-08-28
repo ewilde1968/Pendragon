@@ -18,10 +18,10 @@ var LadySchema = Character.schema.extend({
 });
 
 
-LadySchema.statics.factory = function (template, firstKnight) {
+LadySchema.statics.factory = function (template, game) {
     "use strict";
     var result = new Lady(template);
-    result.initialize(template);
+    result.initialize(template, game);
 
     return result;
 };

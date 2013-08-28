@@ -56,7 +56,8 @@ var showGameHome = function (req, res, data) {
                     holdings: data.holdings,
                     bros: data.bros,
                     ladies: data.ladies,
-                    extended: data.extended
+                    extended: data.extended,
+                    court: data.court
                    });
     } else {
         res.render('gamehome', {accountId: req.params.userid});

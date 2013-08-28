@@ -31,6 +31,7 @@ var defaultObjects = {
         {
             name: 'Hemel Hempstead',
             rank: 'Knight Banneret',
+            patriarch: 'Caramig ap Blelyd',
             liege: 'Hertford',
             locale: {name: 'Hemel Hempstead'}
         }
@@ -39,16 +40,33 @@ var defaultObjects = {
         {
             name: 'Hertford',
             rank: 'Earl',
+            patriarch: 'Aralyd',
             liege: 'Pendragon',
             locale: {name: 'Hertford Castle'}
+        },
+        {
+            name: 'Caercolun',
+            rank: 'Duke',
+            patriarch: 'Lucius',
+            liege: 'Pendragon',
+            locale: {name: 'Caercolun'},
+            extended: [
+                {
+                    name: 'Elmig ap Lucius',
+                    family: 'Caercolun'
+                }
+            ]
         }
     ],
     kingFamilies: [
         {
             name: 'Pendragon',
             rank: 'King',
+            patriarch: 'Uther',
             locale: {name: 'White Castle of London'}
         }
+    ],
+    bachelorKnights: [
     ],
     courts: [
         {
@@ -58,24 +76,16 @@ var defaultObjects = {
             presiding: 'liege',
             locale: 'liege',
             guests: {vassals: true,
-                     'Elmig Caercolun': true
+                     'Elmig ap Lucius': true
                     },
             news: {
-                'Elmig Caercolun': 'Spies from Essex say another Saxon army has landed in the east! He is King Aethelswith, and he is amassing troops along the roads to the north. My father, Duke Caercolun, is ready and will drive these demons back; but, we have need of more knights at our side.',
+                'Elmig ap Lucius': 'Spies from Essex say another Saxon army has landed in the east! He is King Aethelswith, and he is amassing troops along the roads to the north. My father, Duke Caercolun, is ready and will drive these demons back; but, we have need of more knights at our side.',
                 'Hertford': "We muster for King Uther in two weeks at Salisbury. We go south to fight King Aelle as Uther Pendragon commands. Duke Caercolun must needs hold off Aethelswith's Saxon hordes to the east of his own accord."
             },
             gossip: "\"The Saxons are at our gate! Who's to know the heart of a devil? Duke Lucius' son says they're traveling north; but, I say they'll be coming straight to our shire instead! Whither shall we flee?\"\r\n\"Flee, loves? Nay. Sir Elmig knows what he says and those brutes will march to Caercolun this summer.\"\r\n\"Then do you think we should send our knights to the Duke? I hear a whole new fleet of them have arrived this winter. How can the Duke survive such an onslought?\"\r\n\"King Uther is asking for all worthy squires to be knighted early this spring so that he has men to fight against the Saxons himself. I think the Earl will ride with the King! How could he do otherwise?\"\r\n\"Aye, so do I. But will Cornwall come as well? He has the best nights in the land, second to our own Earl of course; but he's not answered the King's muster in two years now.\"",
             intrigue: {Fumble: "\"Earl Aralyd's daughter Ilaine is madly in love with Sir Elmig. She begged the Earl to serve Sir Elmig at the Pentecost feast personally.\"",
                        Success: "\"Merlin is absent because he is so exhausted from using so much magic last year to help King Uther win a victory in the Battle of Damen. But the king has promised to help Duke Ulfius of Silchester.\"\r\n\"You do know, don’t you, that the mages must sleep when they use their powers to such a great extent? And the king is so impetuous without the magician’s guidance. I hope he is not acting too hastily!\"",
                        'Critical Success': "Gagyr ap Agragore, the praetor of Royston, is absent this Pentecost because he spends more time with Earl Huntington than Earl Hertford. Rumor has it that the praetor's daughter will marry Earl Huntington's eldest son."},
-            maidens: {
-                'Ilaine Hertford': true,
-                'High Wycomb': false,
-                'Obilot Knebworth': true,
-                'Gwenhwyfar of Brittany': true,
-                'Feunette': true,
-                'Borehamwood': false
-            },
             friday: {
                 morning: {activity: 'none'},
                 evening: {activity: 'none'}
@@ -84,7 +94,7 @@ var defaultObjects = {
                 morning: {
                     activity: 'hunting',
                     opportunities: [
-                        {'Elmig Cercolun': 'Befriend Caercolun'},
+                        {'Elmig ap Lucius': 'Befriend Caercolun'},
                         {'Aragore ap Gerdig': 'Offer Feunette'}
                     ]
                 },

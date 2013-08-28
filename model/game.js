@@ -10,6 +10,9 @@ var mongoose = require('mongoose'),
     ObjectId = Schema.ObjectId,
     defaultObjects = require('./../model/defaultObjects'),
     Family = require('./family'),
+    Knight = require('./knight'),
+    Squire = require('./squire'),
+    Lady = require('./lady'),
     Storyline = require('./storyline'),
     Court = require('./court');
 
@@ -44,16 +47,18 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
             var counter = 0,
                 limit = list.length;
             
-            list.forEach(function (template) {
-                template.game = result.id;
+            if (limit > 0) {
+                list.forEach(function (template) {
+                    template.game = result.id;
 
-                Family.factory(template, settings, function (f) {
-                    counter += 1;
+                    Family.factory(template, settings, function (f) {
+                        counter += 1;
                     
-                    if (match === template.name) {result.playerFamily = f.id; }
-                    if (counter >= limit) {cb(); }
+                        if (match === template.name) {result.playerFamily = f.id; }
+                        if (counter >= limit) {cb(); }
+                    });
                 });
-            });
+            } else if (cb) {cb(); }
         };
             
 
@@ -75,8 +80,10 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
         createFamilies(defaultObjects.peerFamilies, settings.family, function () {
             createFamilies(defaultObjects.lordFamilies, settings.family, function () {
                 createFamilies(defaultObjects.sirFamilies, settings.family, function () {
-                    doneFamilies = true;
-                    complete();
+                    createFamilies(defaultObjects.bachelorKnights, settings.family, function () {
+                        doneFamilies = true;
+                        complete();
+                    });
                 });
             });
         });
@@ -151,8 +158,8 @@ GameSchema.methods.getEvents = function (cb) {
         
             if (court) {
                 that.court = court.id;
-                court.getEvents(that, result, function () {
-                    doneC = court;
+                court.getEvents(that, result, function (data) {
+                    doneC = data;
                     complete();
                 });
             } else {

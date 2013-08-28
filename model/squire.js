@@ -15,10 +15,10 @@ var SquireSchema = Character.schema.extend({
 });
 
 
-SquireSchema.statics.factory = function (template, firstKnight) {
+SquireSchema.statics.factory = function (template, game, cb, firstKnight) {
     "use strict";
     var result = new Squire(template);
-    result.initialize(template);
+    result.initialize(template, game);
 
     result.profession = 'Squire';
 
@@ -34,6 +34,8 @@ SquireSchema.statics.factory = function (template, firstKnight) {
     result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
     result.skills.push(Skill.factory({name: 'Spear', level: 1}));
 
+    result.save(cb);
+    
     return result;
 };
 
