@@ -10,9 +10,6 @@ var mongoose = require('mongoose'),
     ObjectId = Schema.ObjectId,
     defaultObjects = require('./../model/defaultObjects'),
     Family = require('./family'),
-    Knight = require('./knight'),
-    Squire = require('./squire'),
-    Lady = require('./lady'),
     Storyline = require('./storyline'),
     Court = require('./court');
 
@@ -79,10 +76,12 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
     createFamilies(defaultObjects.kingFamilies, settings.family, function () {
         createFamilies(defaultObjects.peerFamilies, settings.family, function () {
             createFamilies(defaultObjects.lordFamilies, settings.family, function () {
-                createFamilies(defaultObjects.sirFamilies, settings.family, function () {
-                    createFamilies(defaultObjects.bachelorKnights, settings.family, function () {
-                        doneFamilies = true;
-                        complete();
+                createFamilies(defaultObjects.nonPlayerSirFamilies, settings.family, function () {
+                    createFamilies(defaultObjects.sirFamilies, settings.family, function () {
+                        createFamilies(defaultObjects.bachelorKnights, settings.family, function () {
+                            doneFamilies = true;
+                            complete();
+                        });
                     });
                 });
             });

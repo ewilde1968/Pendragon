@@ -111,7 +111,7 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                                 if (false === that.guestsObj[doc.name] && that.guests.indexOf(doc) !== -1) {
                                     // pull explicitly not appearing vassals
                                     that.guests.pull(doc);
-                                } else if (doc.id !== pf) {
+                                } else if (doc.id !== pf && doc.patriarch) {
                                     // skip player family as player will make attendance decision
                                     that.guests.addToSet(doc.patriarch);
                                 }

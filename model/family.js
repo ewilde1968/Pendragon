@@ -49,12 +49,19 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                              generosity: template.generosity || 0,
                              livingStandard: template.livingStandard || 'Normal'
                             }),
-        donePatriarch = false,
+        donePatriarch = template.patriarch === false,
         doneLocale = !template.locale,
         doneLiege = !template.liege,
         countExtended = template.extended ? template.extended.length : 0,
+        countLadies = template.ladies ? template.ladies.length : 0,
+        stewardLady,
         complete = function () {
-            if (0 === countExtended && donePatriarch && doneLiege && doneLocale) {
+            if (0 === countLadies && 0 === countExtended && donePatriarch && doneLiege && doneLocale) {
+                if (stewardLady && doneLocale.steward && !doneLocale.steward.familyRef) {
+                    doneLocale.addSteward(stewardLady);
+                    doneLocale.save();
+                }
+                
                 result.save(function (err, doc) {
                     if (err) {return err; }
                     if (cb) {cb(doc); }
@@ -65,22 +72,23 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     result.generateSpecialty()
         .fatherHistory();
 
-    Knight.factory({name: template.patriarch || 'first knight',
-                    profession: 'Knight'
-                   }, template.game,
+    if (template.patriarch !== false) {
+        Knight.factory({name: template.patriarch || 'first knight',
+                        profession: 'Knight'
+                    }, template.game,
                    function (err, firstKnight) {
-            var locale;
-            if (err) {return err; }
+                if (err) {return err; }
 
-            result.patriarch = firstKnight.id;
-            donePatriarch = true;
-            complete();
-        }, true);
+                result.patriarch = firstKnight.id;
+                donePatriarch = true;
+                complete();
+            }, true);
+    }
     
     if (template.locale) {
         template.locale.landlord = result.id;
         Locale.factory(template.locale, function (err, locale) {
-            doneLocale = true;
+            doneLocale = locale;
             complete();
         });
     }
@@ -105,6 +113,23 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                 
                 result.extended.addToSet(s);
                 countExtended -= 1;
+                complete();
+            });
+        });
+    }
+    
+    if (template.ladies) {
+        template.ladies.forEach(function (l) {
+            Lady.factory(l, template.game, function (err, lady) {
+                if (err) {return err; }
+                
+                // find the lady with the highest stewardry to take care of the holding
+                if (!stewardLady || stewardLady.getSkill('Stewardry').level > lady.getSkill('Stewardry').level) {
+                    stewardLady = lady;
+                }
+                
+                result.ladies.addToSet(lady);
+                countLadies -= 1;
                 complete();
             });
         });

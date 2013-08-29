@@ -21,6 +21,39 @@ var defaultObjects = {
             locale: {name: 'Harpenden Wood'}
         }
     ],
+    nonPlayerSirFamilies: [
+        {
+            name: 'High Wycomb',
+            rank: 'Sir',
+            liege: 'Hertford',
+            locale: {name: 'High Wycomb'},
+            ladies: [
+                {
+                    name: 'Morcheidys apf Caramig',
+                    age: 16
+                }
+            ]
+        },
+        {
+            name: 'Borehamwood',
+            rank: 'Sir',
+            liege: "Hertford",
+            locale: {name: 'Borehamwood'}
+        },
+        {
+            name: 'Knebworth',
+            rank: 'Sir',
+            liege: 'Hertford',
+            locale: {name: 'Knebworth'},
+            patriarch: false,
+            ladies: [
+                {
+                    name: 'Obilot of Knebworth',
+                    age: 28
+                }
+            ]
+        }
+    ],
     lordFamilies: [
         {
             name: 'Berkhamstead',
@@ -34,6 +67,19 @@ var defaultObjects = {
             patriarch: 'Caramig ap Blelyd',
             liege: 'Hertford',
             locale: {name: 'Hemel Hempstead'}
+        },
+        {
+            name: 'Sains',
+            rank:   'Knight Banneret',
+            patriarch: 'Galwyrn',
+            liege: 'Cornouailles',
+            locale: {name: 'Sains'},
+            ladies: [
+                {
+                    name: 'Gwenhwyfar of Brittany',
+                    age: 17
+                }
+            ]
         }
     ],
     peerFamilies: [
@@ -42,7 +88,13 @@ var defaultObjects = {
             rank: 'Earl',
             patriarch: 'Aralyd',
             liege: 'Pendragon',
-            locale: {name: 'Hertford Castle'}
+            locale: {name: 'Hertford Castle'},
+            ladies: [
+                {
+                    name: 'Elaine apf Aralyd',
+                    age: 17
+                }
+            ]
         },
         {
             name: 'Caercolun',
@@ -67,6 +119,18 @@ var defaultObjects = {
         }
     ],
     bachelorKnights: [
+        {
+            name: 'Gerdig',
+            rank: 'Bachelor',
+            liege: 'Hertford',
+            patriarch: 'Aragore ap Gerdig',
+            ladies: [
+                {
+                    name: 'Feunette',
+                    age: 15
+                }
+            ]
+        }
     ],
     courts: [
         {
@@ -76,7 +140,12 @@ var defaultObjects = {
             presiding: 'liege',
             locale: 'liege',
             guests: {vassals: true,
-                     'Elmig ap Lucius': true
+                     'Elmig ap Lucius': true,
+                     'Elaine apf Aralyd': true,
+                     'Morcheidys apf Caramig': true,
+                     'Obilot of Knebworth': true,
+                     'Gwenhwyfar of Brittany': true,
+                     'Feunette': true
                     },
             news: {
                 'Elmig ap Lucius': 'Spies from Essex say another Saxon army has landed in the east! He is King Aethelswith, and he is amassing troops along the roads to the north. My father, Duke Caercolun, is ready and will drive these demons back; but, we have need of more knights at our side.',

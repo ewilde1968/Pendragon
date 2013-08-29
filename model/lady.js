@@ -18,28 +18,23 @@ var LadySchema = Character.schema.extend({
 });
 
 
-LadySchema.statics.factory = function (template, game) {
+LadySchema.statics.factory = function (template, game, cb) {
     "use strict";
     var result = new Lady(template);
     result.initialize(template, game);
+    
+    result.profession = 'Lady';
+
+    result.age = template.age || 16;
+    result.fertility = template.fertility || (this.age > 14 && this.age < 38);
+    result.soul += 1;
+    result.body -= 1;
+    result.honor = 4;
+    result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
+
+    result.save(cb);
 
     return result;
-};
-
-LadySchema.methods.initialize = function (template) {
-    "use strict";
-    this.prototype.initialize(template);
-    
-    this.profession = 'Lady';
-
-    this.age = template.age || 16;
-    this.fertility = template.fertility || (this.age > 14 && this.age < 38);
-    this.soul += 1;
-    this.body -= 1;
-    this.honor = 4;
-    this.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
-
-    return this;
 };
 
 LadySchema.methods.increaseAge = function () {
