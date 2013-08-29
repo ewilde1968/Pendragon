@@ -125,10 +125,13 @@ block content
       #mapPage(class='notShown')
       #courtPage(class='notShown')
         if court
-          #news
+          p #{court.invitation}
           #attendees
             each attendee in court.guests
-              mixin characterButton(attendee)
+              .courtAttendee
+                mixin characterButton(attendee)
+                if (court.news[attendee.id])
+                  p #{court.news[attendee.id]}
           #schedule
         else
           p No court in session this season.

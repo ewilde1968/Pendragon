@@ -49,13 +49,13 @@ CourtSchema.statics.factory = function (template, game, cb) {
             intrigue: template.intrigue,
             localeObj: template.locale,
             guestsObj: template.guests,
+            news: template.news,
             presidingObj: template.presiding
         }),
-        doneNews = true,                // TODO
         doneOpp = true,                 // TODO
         doneAct = true,                 // TODO
         complete = function () {
-            if (doneAct && doneOpp && doneNews) {
+            if (doneAct && doneOpp) {
                 result.save(function (err) {
                     if (err) {return err; }
                     if (cb) {cb(); }
@@ -127,7 +127,14 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                         
                         if (patriarch) {
                             that.presiding = patriarch;
+                            
                             that.guests.unshift(patriarch);
+                            if (that.news && that.news.presiding) {
+                                // rename the property
+                                that.news[patriarch.id] = that.news.presiding;
+                                delete that.news.presiding;
+                            }
+                            
                             presiding = family.rank + ' ' + patriarch.name;
                             complete();
                         } else {
@@ -152,8 +159,18 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                 if (doc) {
                     if (that.guestsObj[name]) {
                         that.guests.addToSet(doc);
+                        
+                        if (that.news && that.news[name]) {
+                            // rename the property
+                            that.news[doc.id] = that.news[name];
+                            delete that.news[name];
+                        }
                     } else if (that.guests.indexOf(doc) !== -1) {
                         that.guests.pull(doc);
+                        
+                        if (that.news && that.news[doc.id]) {
+                            delete that.news[doc.id];
+                        }
                     }
                 }   // skip the unfound characters
                 
