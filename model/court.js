@@ -26,7 +26,7 @@ var CourtSchema = new Schema({
     guests:         [{type: ObjectId, ref: 'Character'}],
     guestsObj:      Object,
     news:           Object,
-    gossip:         String,
+    gossip:         [String],
     intrigue:       {Fumble: String, Success: String, 'Critical Success': String},
     friday:         {morning: {activity: String, opportunities: [Object]},
                      evening: {activity: String, opportunities: [Object]}},
@@ -77,9 +77,13 @@ CourtSchema.methods.addGuestList = function (game, cb) {
         guestLimit = 0,
         vassals = !that.guestsObj || !that.guestsObj.vassals,
         prop,
+        newNews,
         complete = function () {
             if (0 === guestLimit && presiding && vassals && locale && cb) {
                 that.invitation = 'To be held at ' + locale + ', ' + presiding + ' presiding.';
+                
+                if (newNews) {that.news = newNews; }
+                
                 that.save(cb);
             }
         },
@@ -131,8 +135,8 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                             that.guests.unshift(patriarch);
                             if (that.news && that.news.presiding) {
                                 // rename the property
-                                that.news[patriarch.id] = that.news.presiding;
-                                delete that.news.presiding;
+                                if (!newNews) {newNews = {}; }
+                                newNews[patriarch.id] = that.news.presiding;
                             }
                             
                             presiding = family.rank + ' ' + patriarch.name;
@@ -162,15 +166,14 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                         
                         if (that.news && that.news[name]) {
                             // rename the property
-                            that.news[doc.id] = that.news[name];
-                            delete that.news[name];
+                            if (!newNews) {newNews = {}; }
+                            newNews[doc.id] = that.news[name];
                         }
                     } else if (that.guests.indexOf(doc) !== -1) {
                         that.guests.pull(doc);
                         
-                        if (that.news && that.news[doc.id]) {
-                            delete that.news[doc.id];
-                        }
+                        if (that.news && that.news[doc.id]) {delete that.news[doc.id]; }
+                        if (newNews && newNews[doc.id]) {delete newNews[doc.id]; }
                     }
                 }   // skip the unfound characters
                 

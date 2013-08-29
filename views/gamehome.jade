@@ -132,6 +132,10 @@ block content
                 mixin characterButton(attendee)
                 if (court.news[attendee.id])
                   p #{court.news[attendee.id]}
+          #gossip
+            h3 Gossip
+            each quote in court.gossip
+              p #{quote}
           #schedule
         else
           p No court in session this season.
