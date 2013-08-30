@@ -26,7 +26,6 @@ var CourtSchema = new Schema({
     guests:         [{type: ObjectId, ref: 'Character'}],
     guestsObj:      Object,
     news:           Object,
-    gossip:         [String],
     intrigue:       {Fumble: String, Success: String, 'Critical Success': String},
     schedule:       Object
 });

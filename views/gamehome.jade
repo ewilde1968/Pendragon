@@ -21,13 +21,23 @@ block content
         if day.morning
           .morning
             p Morning
-            each activity in day.morning
-              input(type='radio', name='#{dayStr} Morning', value='#{activity.name}')
+            each activity, index in day.morning
+              .courtActivity
+                if index === 0
+                  input(type='radio', name='#{dayStr} Morning', value='#{activity.name}', checked='true')
+                else
+                  input(type='radio', name='#{dayStr} Morning', value='#{activity.name}')
+                label(for='#{dayStr} Morning') #{activity.name}
         if day.evening
           .evening
             P Evening
-            each activity in day.evening
-              input(type='radio', name='#{dayStr} Evening', value='#{activity.name}')
+            each activity, index in day.evening
+              .courtActivity
+                if index === 0
+                  input(type='radio', name='#{dayStr} Evening', value='#{activity.name}', checked='true')
+                else
+                  input(type='radio', name='#{dayStr} Evening', value='#{activity.name}')
+                label(for='#{dayStr} Evening') #{activity.name}
 
   mixin characterButton(c)
     button.memberDetailButton(data-id='#{c.id}')
@@ -283,7 +293,14 @@ block content
         $('#settingsMenu').click(function () {showPage('#settingsPage'); });
 
         $('#turnCounter button').click(function () {
+            // set year
             changesObj['turn'] = {year: #{game.turn.year}, quarter: '#{game.turn.quarter}'};
+
+            // gather court schedule data
+            $('#schedule input:checked').each(function (index, element) {
+                changesObj[$(this).attr('name')] = $(this).attr('value');
+            });
+            
             $('#changes').val( JSON.stringify(changesObj));
             $('form').submit();
         });

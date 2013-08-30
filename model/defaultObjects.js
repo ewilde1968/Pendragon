@@ -156,80 +156,82 @@ var defaultObjects = {
             intrigue: {Fumble: "\"Earl Aralyd's daughter Ilaine is madly in love with Sir Elmig. She begged the Earl to serve Sir Elmig at the Pentecost feast personally.\"",
                        Success: "\"Merlin is absent because he is so exhausted from using so much magic last year to help King Uther win a victory in the Battle of Damen. But the king has promised to help Duke Ulfius of Silchester.\"\r\n\"You do know, don’t you, that the mages must sleep when they use their powers to such a great extent? And the king is so impetuous without the magician’s guidance. I hope he is not acting too hastily!\"",
                        'Critical Success': "Gagyr ap Agragore, the praetor of Royston, is absent this Pentecost because he spends more time with Earl Huntington than Earl Hertford. Rumor has it that the praetor's daughter will marry Earl Huntington's eldest son."},
-            saturday: {
-                morning: [
-                    {
-                        name: 'Hunting east of the Gentile River.',
-                        check: 'body',
-                        difficulty: 10,
-                        results: {
-                            Fumble: 'Offend Caercolun',
-                            Success: 'Befriend Caercolun',
-                            'Critical Success': 'Befriend Caercolun'
+            schedule: {
+                saturday: {
+                    morning: [
+                        {
+                            name: 'Hunting east of the Gentile River',
+                            check: 'body',
+                            difficulty: 10,
+                            results: {
+                                Fumble: 'Offend Caercolun',
+                                Success: 'Befriend Caercolun',
+                                'Critical Success': 'Befriend Caercolun'
+                            }
+                        },
+                        {
+                            name: 'Socialize at Castle Hertford',
+                            check: 'mind',
+                            difficulty: 10,
+                            result: {
+                                Fumble: 'Offend Gwenhwyfer',
+                                Success: 'Offer Feunette',
+                                'Critical Success': 'Befriend Gwenhwyfer'
+                            }
                         }
-                    },
-                    {
-                        name: 'Socialize at Castle Hertford',
-                        check: 'mind',
-                        difficulty: 10,
-                        result: {
-                            Fumble: 'Offend Gwenhwyfer',
-                            Success: 'Offer Feunette',
-                            'Critical Success': 'Befriend Gwenhwyfer'
+                    ],
+                    evening: [
+                        {
+                            name: 'Feast at Great Hall',
+                            check: 'mind',
+                            difficulty: 10,
+                            result: {
+                                Fumble: 'Offend Gwenhwyfer',
+                                Success: 'Flirt with Wench',
+                                'Critical Success': 'Befriend Caercolun'
+                            }
+                        },
+                        {
+                            name: 'Vigil',
+                            check: 'soul',
+                            difficulty: 10,
+                            result: {
+                                Fumble: 'Shaken Faith',
+                                Success: 'Befriend Chaplain',
+                                'Critical Success': 'Befriend Countess'
+                            }
                         }
-                    }
-                ],
-                evening: [
-                    {
-                        name: 'Feast at Great Hall',
-                        check: 'mind',
-                        difficulty: 10,
-                        result: {
-                            Fumble: 'Offend Gwenhwyfer',
-                            Success: 'Flirt with Wench',
-                            'Critical Success': 'Befriend Caercolun'
+                    ]
+                },
+                sunday: {
+                    morning: [
+                        {
+                            name: 'Knighting Ceremony',
+                            check: 'honor',
+                            difficulty: 5,
+                            result: {
+                                Fumble: 'Knighting Family Patriarch',
+                                Failure: 'Knighting Family Patriarch',
+                                Success: 'Knighting Family Patriarch',
+                                'Critical Success': 'Knighting Family Patriarch With Leap'
+                            }
                         }
-                    },
-                    {
-                        name: 'Vigil',
-                        check: 'soul',
-                        difficulty: 15,
-                        result: {
-                            Fumble: 'Shaken Faith',
-                            Success: 'Befriend Chaplain',
-                            'Critical Success': 'Befriend Countess'
+                    ],
+                    evening: [
+                        {
+                            name: 'Feast',
+                            check: 'mind',
+                            difficulty: 10,
+                            result: {
+                                Fumble: 'Offend Berkhamstead',
+                                Success: 'Offer Feunette',
+                                'Critical Success': 'Riding Under the Marshal'
+                            }
                         }
-                    }
-                ]
-            },
-            sunday: {
-                morning: [
-                    {
-                        name: 'Knighting Ceremony',
-                        check: 'honor',
-                        difficulty: 5,
-                        result: {
-                            Fumble: 'Knighting Family Patriarch',
-                            Failure: 'Knighting Family Patriarch',
-                            Success: 'Knighting Family Patriarch',
-                            'Critical Success': 'Knighting Family Patriarch With Leap'
-                        }
-                    }
-                ],
-                evening: [
-                    {
-                        name: 'Feast',
-                        check: 'mind',
-                        difficulty: 10,
-                        result: {
-                            Fumble: 'Offend Berkhamstead',
-                            Success: 'Offer Feunette',
-                            'Critical Success': 'Riding Under the Marshal'
-                        }
-                    }
-                ]
+                    ]
+                }
             }
-        }
+        }   // 485 Pentacost
     ],
     investments: [
         {
