@@ -150,13 +150,11 @@ GameSchema.methods.getEvents = function (cb) {
         });
     });
     
-    Court.findOne({year: this.turn.year,
-                   season: this.turn.quarter},
-                  function (err, court) {
+    if (that.court) {
+        Court.findById(that.court, function (err, court) {
             if (err) {return err; }
         
             if (court) {
-                that.court = court.id;
                 court.getEvents(that, result, function (data) {
                     doneC = data;
                     complete();
@@ -167,6 +165,10 @@ GameSchema.methods.getEvents = function (cb) {
                 complete();
             }
         });
+    } else {
+        doneC = true;
+        complete();
+    }
     
     return this;
 };
@@ -178,8 +180,9 @@ GameSchema.methods.nextTurn = function (options, cb) {
         nextYear = this.turn.year,
         doneF = false,
         doneC = !that.court,
+        doneNextC = false,
         complete = function () {
-            if (doneF && doneC) {
+            if (doneNextC && doneF && doneC) {
                 that.turn.quarter = nextSeason;
                 that.turn.year = nextYear;
 
@@ -208,10 +211,12 @@ GameSchema.methods.nextTurn = function (options, cb) {
         
             if (court) {
                 court.nextTurn(options.court, that, function () {
+                    delete that.court;
                     doneC = true;
                     complete();
                 });
             } else {
+                delete that.court;
                 doneC = true;
                 complete();
             }
@@ -253,18 +258,11 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // example if there is no liege for the player or if the player's
             // liege is at the King's court but the player was not invited.
             //
-            // Court will last 2-3 days. At court, the player will have an
-            // opportunity to seek audience with up to one family or character
-            // per morning and afternoon.
-            //
-            // In addition, courtly events (such as falconry, hunting, horse
+            // Court will last 2-3 days. At court, events (such as hunting, horse
             // racing, etc) will be organized for mornings or afternoons.
             // Characters wishing to organize events can attempt to do for any
             // open time slots in the court's calendar. Characters participating
-            // in an event can only provide an audience at that event.
-            //
-            // Every audience can provide a political opportunity, a romance
-            // opportunity, a campaign opportunity or a quest opportunity.
+            // in an event can perform an opposed check for special results.
             //
         // TODO determine family births
         // TODO steward advice
@@ -305,6 +303,26 @@ GameSchema.methods.nextTurn = function (options, cb) {
         };
     }
 
+    Court.findOne({year: nextYear, season: nextSeason})
+        .where('presidingObj').exists() // build from template court
+        .exec(function (err, court) {
+            if (err) {return err; }
+            
+            if (court) {
+                Court.factory(court, that, function (err, c) {
+                    that.court = c.id;
+
+                    doneNextC = true;
+                    complete();
+                });
+            } else {
+                delete that.court;
+
+                doneNextC = true;
+                complete();
+            }
+        });
+    
     return this;
 };
 

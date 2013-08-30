@@ -19,7 +19,7 @@ var CourtSchema = new Schema({
     season:         String,
     name:           String,
     invitation:     String,
-    presiding:      [{type: ObjectId, ref: 'Character'}],
+    presiding:      {type: ObjectId, ref: 'Character'},
     presidingObj:   Object,
     locale:         [{type: ObjectId, ref: 'Locale'}],
     localeObj:      Object,
@@ -28,14 +28,7 @@ var CourtSchema = new Schema({
     news:           Object,
     gossip:         [String],
     intrigue:       {Fumble: String, Success: String, 'Critical Success': String},
-    friday:         {morning: {activity: String, opportunities: [Object]},
-                     evening: {activity: String, opportunities: [Object]}},
-    saturday:       {morning: {activity: String, opportunities: [Object]},
-                     evening: {activity: String, opportunities: [Object]}},
-    sunday:         {morning: {activity: String, opportunities: [Object]},
-                     evening: {activity: String, opportunities: [Object]}},
-    opportunities:  Object,
-    activities:     Object
+    schedule:       Object
 });
 
 
@@ -45,46 +38,98 @@ CourtSchema.statics.factory = function (template, game, cb) {
             year: template.year,
             season: template.season,
             name: template.name,
-            gossip: template.gossip,
             intrigue: template.intrigue,
-            localeObj: template.locale,
-            guestsObj: template.guests,
-            news: template.news,
-            presidingObj: template.presiding
+            schedule: template.schedule
         }),
-        doneOpp = true,                 // TODO
-        doneAct = true,                 // TODO
+        doneGuests = !template.guests,
+        doneNews = !template.news,
         complete = function () {
-            if (doneAct && doneOpp) {
-                result.save(function (err) {
-                    if (err) {return err; }
-                    if (cb) {cb(); }
-                });
+            if (doneNews && doneGuests) {
+                result.save(cb);
             }
         };
-    
-    complete();
+
+    if (game) {
+        // this is a live court object instead of a template from the database
+        result.addGuestList(template, game, function () {
+            result.populate({path: 'guests presiding', model: 'Character'}, function (err, court) {
+                if (err) {return err; }
+
+                court.addNews(template);
+            
+                doneNews = true;
+                complete();
+            });
+
+            doneGuests = true;
+            complete();
+        });
+    } else {
+        result.presidingObj = template.presiding;
+        result.guestsObj = template.guests;
+        result.localeObj = template.locale;
+        result.news = template.news;
+
+        doneGuests = true;
+        doneNews = true;
+        complete();
+    }
     
     return result;
 };
 
-CourtSchema.methods.addGuestList = function (game, cb) {
+CourtSchema.methods.addNews = function (template) {
+    "use strict";
+    var that = this,
+        newNews = {};
+    
+    if (that.presiding && template.news) {
+        newNews[that.presiding.id] = template.news;
+    }
+    
+    if (template.guestsObj) {
+        that.guests.forEach(function (g, i) {
+            var lookup = template.guestsObj[g.name];
+            if (lookup) {newNews[g.id] = lookup; }
+        });
+    }
+
+    that.news = newNews;
+    
+    return this;
+};
+
+CourtSchema.methods.doSchedule = function (template) {
+    "use strict";
+    // A schedule contains different options for each day's morning and evening time slots.
+    // The user can opt any activity listed as available, or opt out of all activities, for
+    // any given time slot.
+    //
+    // Each activity requires an opposed check against the listed statistic against the
+    // listed difficulty. Results are events queued for the next season.
+    // 
+    // Example activities include:
+    //      skill checks - Horse Race, Melee, Duel
+    //      body checks - Hunting, Foot Race, Wrestling
+    //      mind checks - Socialize, Gaming
+    //      soul checks - Temptation, Vigil
+    //      honor checks - Knighting, Audience
+};
+
+CourtSchema.methods.addGuestList = function (template, game, cb) {
     "use strict";
     var that = this,
         presiding,
         locale = !that.locale,
         pf = game.playerFamily,
         guestLimit = 0,
-        vassals = !that.guestsObj || !that.guestsObj.vassals,
+        vassals = !template.guestsObj || !template.guestsObj.vassals,
         prop,
-        newNews,
         complete = function () {
-            if (0 === guestLimit && presiding && vassals && locale && cb) {
+            if (0 === guestLimit && presiding && vassals && locale) {
                 that.invitation = 'To be held at ' + locale + ', ' + presiding + ' presiding.';
                 
-                if (newNews) {that.news = newNews; }
-                
-                that.save(cb);
+                if (cb) {cb(); }
             }
         },
         findLocale = function (id) {
@@ -112,7 +157,7 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                             if (err) {return err; }
                             
                             docs.forEach(function (doc) {
-                                if (false === that.guestsObj[doc.name] && that.guests.indexOf(doc) !== -1) {
+                                if (false === template.guestsObj[doc.name] && that.guests.indexOf(doc) !== -1) {
                                     // pull explicitly not appearing vassals
                                     that.guests.pull(doc);
                                 } else if (doc.id !== pf && doc.patriarch) {
@@ -131,13 +176,6 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                         
                         if (patriarch) {
                             that.presiding = patriarch;
-                            
-                            that.guests.unshift(patriarch);
-                            if (that.news && that.news.presiding) {
-                                // rename the property
-                                if (!newNews) {newNews = {}; }
-                                newNews[patriarch.id] = that.news.presiding;
-                            }
                             
                             presiding = family.rank + ' ' + patriarch.name;
                             complete();
@@ -161,19 +199,11 @@ CourtSchema.methods.addGuestList = function (game, cb) {
                 if (err) {return err; }
 
                 if (doc) {
-                    if (that.guestsObj[name]) {
+                    if (template.guestsObj[name]) {
                         that.guests.addToSet(doc);
-                        
-                        if (that.news && that.news[name]) {
-                            // rename the property
-                            if (!newNews) {newNews = {}; }
-                            newNews[doc.id] = that.news[name];
-                        }
+
                     } else if (that.guests.indexOf(doc) !== -1) {
                         that.guests.pull(doc);
-                        
-                        if (that.news && that.news[doc.id]) {delete that.news[doc.id]; }
-                        if (newNews && newNews[doc.id]) {delete newNews[doc.id]; }
                     }
                 }   // skip the unfound characters
                 
@@ -182,15 +212,15 @@ CourtSchema.methods.addGuestList = function (game, cb) {
             });
         };
     
-    switch (that.localeObj) {
+    switch (template.presidingObj) {    // TODO specify locale
     case 'liege':
         Family.findById(pf, 'liege patriarch', function (err, f) {
             if (err) {return err; }
             
 
             if (f) {
-                findLocale(f.liege);
                 findPresiding(f.liege);
+                findLocale(f.liege);
             } else {
                 throw {
                     name: 'invalid court object',
@@ -200,8 +230,8 @@ CourtSchema.methods.addGuestList = function (game, cb) {
         });
         break;
     case 'player':
-        findLocale(pf);
         findPresiding(pf);
+        findLocale(pf);
         break;
     case 'king':
         Family.findById(pf, function (err, family) {
@@ -210,8 +240,8 @@ CourtSchema.methods.addGuestList = function (game, cb) {
             if (family) {
                 family.findKing(function (king) {
                     if (king) {
-                        findLocale(king);
                         findPresiding(king);
+                        findLocale(king);
                     } else {
                         throw {
                             name: 'invalid court object',
@@ -230,9 +260,9 @@ CourtSchema.methods.addGuestList = function (game, cb) {
     default:
     }
   
-    if (that.guestsObj) {
-        for (prop in that.guestsObj) {
-            if (that.guestsObj.hasOwnProperty(prop)) {
+    if (template.guestsObj) {
+        for (prop in template.guestsObj) {
+            if (template.guestsObj.hasOwnProperty(prop)) {
                 guestLimit += 1;
             
                 switch (prop) {
@@ -246,6 +276,8 @@ CourtSchema.methods.addGuestList = function (game, cb) {
             }
         }
     }
+    
+    return this;
 };
 
 CourtSchema.methods.getEvents = function (game, result, cb) {
@@ -267,22 +299,15 @@ CourtSchema.methods.getEvents = function (game, result, cb) {
             if (storyline) {
                 result.push(storyline);
                 
-                that.populate({path: 'guests', model: 'Character'}, function (err, doc) {
+                that.populate({path: 'guests presiding', model: 'Character'}, function (err, doc) {
+                    if (err) {return err; }
                     if (cb) {cb(doc); }
                 });
             }
         };
     
-    if (that.guests.length === 0) {
-        that.addGuestList(game, function () {
-            ev.message = that.invitation;
-            storyline = Storyline.factory(ev);
-            complete();
-        });
-    } else {
-        storyline = Storyline.factory(ev);
-        complete();
-    }
+    storyline = Storyline.factory(ev);
+    complete();
 };
 
 CourtSchema.methods.nextTurn = function (options, game, cb) {

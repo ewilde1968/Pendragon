@@ -14,6 +14,21 @@ block content
     each o in se.choices
       mixin addSubeventDiv(o)
 
+  mixin courtDay(dayStr, day)
+    if day
+      .courtDay
+        p #{dayStr}
+        if day.morning
+          .morning
+            p Morning
+            each activity in day.morning
+              input(type='radio', name='#{dayStr} Morning', value='#{activity.name}')
+        if day.evening
+          .evening
+            P Evening
+            each activity in day.evening
+              input(type='radio', name='#{dayStr} Evening', value='#{activity.name}')
+
   mixin characterButton(c)
     button.memberDetailButton(data-id='#{c.id}')
       p #{c.name}
@@ -127,19 +142,24 @@ block content
         if court
           p #{court.invitation}
           #attendees
+            #courtPresiding
+              mixin characterButton(court.presiding)
+              if (court.news[court.presiding.id])
+                p #{court.news[court.presiding.id])
             each attendee in court.guests
               .courtAttendee
                 mixin characterButton(attendee)
                 if (court.news[attendee.id])
                   p #{court.news[attendee.id]}
-          #gossip
-            h3 Gossip
-            each quote in court.gossip
-              p #{quote}
-          #schedule
+          if court.schedule
+            #schedule
+              mixin courtDay('Friday', court.schedule.friday)
+              mixin courtDay('Saturday', court.schedule.saturday)
+              mixin courtDay('Sunday', court.schedule.sunday)
         else
           p No court in session this season.
       if court
+        mixin characterPage(court.presiding)
         each attendee in court.guests
           mixin characterPage(attendee)
       mixin characterPage(patriarch)
