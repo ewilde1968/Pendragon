@@ -2,9 +2,10 @@ extends layout
 
 block content
   - var turnOnMenu = game && game.playerFamily;
-  - var skillDescriptionsA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'];
-  - var statDescriptionsA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'];
-  - var honorDescriptionsA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
+  - var skillDescriptionsA = ['Untrained', 'Apprentice', 'Journeyman', 'Journeyman', 'Skilled', 'Skilled', 'Craftsman', 'Craftsman', 'Master', 'Master', 'Mythic'];
+  - var statDescriptionsA = ['Dead', 'Failing', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Normal', 'Strong', 'Strong', 'Superlative', 'Mythic'];
+  - var honorDescriptionsA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Esteemed', 'Honorable', 'Chivalrous', 'Glorious', 'Illustrious', 'Regal'];
+
   mixin addSubeventDiv(se)
     .subEventDetailPage(class='notShown', data-action='#{se.actions}', id='#{se.id}')
       p #{se.title}
@@ -39,6 +40,21 @@ block content
                   input(type='radio', name='#{dayStr} Evening', value='#{activity.name}')
                 label(for='#{dayStr} Evening') #{activity.name}
 
+  mixin statDesc(statName, statLevel)
+    .stat
+      if ('Honor' === statName )
+        p #{statName} #{honorDescriptionsA[statLevel]}
+      else if ('Health' === statName )
+        p #{statName} #{statDescriptionsA[statLevel]}
+      else if ('Mind' === statName )
+        p #{statName} #{statDescriptionsA[statLevel]}
+      else if ('Soul' === statName )
+        p #{statName} #{statDescriptionsA[statLevel]}
+      else if ('Body' === statName )
+        p #{statName} #{statDescriptionsA[statLevel]}
+      else
+        p #{statName} #{skillDescriptionsA[statLevel]}
+
   mixin characterButton(c)
     button.memberDetailButton(data-id='#{c.id}')
       p #{c.name}
@@ -50,25 +66,9 @@ block content
       p.memberProfession #{member.profession}
       .statsView
         p.memberAge #{member.age} years old
-        .health
-          span.statLabel Health: 
-          span.statValue(data-value='#{member.health}') #{statDescriptionsA[member.health]}
-        .body
-          span.statLabel Body: 
-          span.statValue(data-value='#{member.body}') #{statDescriptionsA[member.body]}
-        .mind
-          span.statLabel Mind: 
-          span.statValue(data-value='#{member.mind}') #{statDescriptionsA[member.mind]}
-        .soul
-          span.statLabel Soul: 
-          span.statValue(data-value='#{member.soul}') #{statDescriptionsA[member.soul]}
-        .honor
-          span.statLabel Honor: 
-          span.statValue(data-value='#{member.honor}') #{honorDescriptionsA[member.honor]}
-        .skills
-          each skill in member.skills
-            .skill
-              p #{skill.name}: #{skillDescriptionsA[skill.level]}
+        .statistics
+          each stat in member.statistics
+            mixin statDesc(stat.name, stat.level)
         .equipment
           if member.armor && member.armor.length > 0
             if member.shield
@@ -82,9 +82,6 @@ block content
     script.
       var changesObj = {},
           cash = #{family.cash};
-      const skillDescA = ['Untrained', 'Neophyte', 'Journeyman', 'Skilled', 'Master', 'Mythic'],
-          statDescA = ['Dead', 'Infirm', 'Feeble', 'Weak', 'Normal', 'Strong', 'Superlative', 'Mythic'],
-          honorDescA = ['Vile', 'Ignominious', 'Dishonorable', 'Churlish', 'Noble', 'Honorable', 'Peerage', 'Illustrious', 'Regal'];
 
   #sidebar
     if turnOnMenu
@@ -298,7 +295,8 @@ block content
 
             // gather court schedule data
             $('#schedule input:checked').each(function (index, element) {
-                changesObj[$(this).attr('name')] = $(this).attr('value');
+                if (!changesObj.court) {changesObj.court = {}; }
+                changesObj.court[$(this).attr('name')] = $(this).attr('value');
             });
             
             $('#changes').val( JSON.stringify(changesObj));
@@ -456,6 +454,9 @@ block content
                                 // do not reflect hate changes this quarter in peasant status
                                 changeHate(prop, action[prop], target);
                                 break;
+                            case 'choice':
+                                changesObj[target] = action[prop];
+                                break;
                             case 'log':
                             default:
                                 break;
@@ -499,8 +500,13 @@ block content
             ev.preventDefault();
             $(this).parent().remove();
             
-            if (subevent && subevent.length === 1 && subbuttons && subbuttons.length > 0) {
-                showEvent(subevent);
+            if (subevent && subevent.length === 1) {
+                if (subbuttons && subbuttons.length > 0) {
+                    showEvent(subevent);
+                } else {
+                    performAction($(subevent));
+                    nextEvent();
+                }
             } else {
                 nextEvent();
             }

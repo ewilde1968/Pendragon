@@ -8,8 +8,7 @@ var Investment; // forward to clear out JSLint errors
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Storyline = require('./storyline'),
-    Skill = require('./skill');
+    Storyline = require('./storyline');
 
 var InvestmentSchema = new Schema({
     name:           { type: String, required: true },

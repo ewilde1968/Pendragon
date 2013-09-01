@@ -37,7 +37,6 @@ CourtSchema.statics.factory = function (template, game, cb) {
             year: template.year,
             season: template.season,
             name: template.name,
-            intrigue: template.intrigue,
             schedule: template.schedule
         }),
         doneGuests = !template.guests,
@@ -48,6 +47,10 @@ CourtSchema.statics.factory = function (template, game, cb) {
             }
         };
 
+    // Workaround fact that setting intrigue in Court constructor doesn't work
+    // with Mongo subobjects. Looks like a Mongo bug.
+    if (template.intrigue) {result.intrigue = template.intrigue; }
+    
     if (game) {
         // this is a live court object instead of a template from the database
         result.addGuestList(template, game, function () {
@@ -96,23 +99,6 @@ CourtSchema.methods.addNews = function (template) {
     that.news = newNews;
     
     return this;
-};
-
-CourtSchema.methods.doSchedule = function (template) {
-    "use strict";
-    // A schedule contains different options for each day's morning and evening time slots.
-    // The user can opt any activity listed as available, or opt out of all activities, for
-    // any given time slot.
-    //
-    // Each activity requires an opposed check against the listed statistic against the
-    // listed difficulty. Results are events queued for the next season.
-    // 
-    // Example activities include:
-    //      skill checks - Horse Race, Melee, Duel
-    //      body checks - Hunting, Foot Race, Wrestling
-    //      mind checks - Socialize, Gaming
-    //      soul checks - Temptation, Vigil
-    //      honor checks - Knighting, Audience
 };
 
 CourtSchema.methods.addGuestList = function (template, game, cb) {
@@ -289,9 +275,9 @@ CourtSchema.methods.getEvents = function (game, result, cb) {
             message: that.invitation,
             actions: {log: true},
             choices: [
-                {label: 'Go with entourage'},
-                {label: 'Go with only squire'},
-                {label: 'Refuse to attend'}
+                {label: 'Go with entourage', actions: {target: 'attendance', choice: 'entourage'}},
+                {label: 'Go with only squire', actions: {target: 'attendance', choice: 'squire'}},
+                {label: 'Refuse to attend', actions: {target: 'attendance', choice: 'decline'}}
             ]
         },
         complete = function () {
@@ -309,9 +295,160 @@ CourtSchema.methods.getEvents = function (game, result, cb) {
     complete();
 };
 
+CourtSchema.methods.doScheduledActivity = function (choice, activities, activist, game, cb) {
+    "use strict";
+    // A schedule contains different options for each day's morning and evening time slots.
+    // The user can opt any activity listed as available, or opt out of all activities, for
+    // any given time slot.
+    //
+    // Each activity requires an opposed check against the listed statistic against the
+    // listed difficulty. Results are events queued for the next season.
+    // 
+    // Example activities include:
+    //      skill checks - Horse Race, Melee, Duel
+    //      body checks - Hunting, Foot Race, Wrestling
+    //      mind checks - Socialize, Gaming
+    //      soul checks - Temptation, Vigil
+    //      honor checks - Knighting, Audience
+    var that = this,
+        doCB = true,
+        stat,
+        roll;
+    
+    activities.forEach(function (activity) {
+        if (choice === activity.name) {
+            stat = activist.getStat(activity.check);
+            if (stat) {
+                roll = stat.difficultyCheck(activity.difficulty);
+                if (activity.results) {
+                    if (activity.results[roll]) {
+                        doCB = false;
+                        Storyline.findOne({name: activity.results[roll]}, function (err, ev) {
+                            if (err) {return err; }
+                            if (ev) {game.queuedEvents.push(ev); }
+                            if (cb) {cb(); }
+                        });
+                    }
+                } else {
+                    if (that.intrigue[roll]) {
+                        game.queuedEvents.push(Storyline.factory({
+                            title: 'Intrigue',
+                            message: that.intrigue[roll],
+                            choices: [{label: 'Done'}]
+                        }));
+                    }
+                }
+            }
+        }
+    });
+    
+    if (doCB && cb) {cb(); }
+};
+
+CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch, cb) {
+    "use strict";
+    var that = this,
+        counter = 1,
+        complete = function () {
+            counter -= 1;
+            if (0 === counter && cb) {cb(); }
+        };
+    
+    if (options['Friday Morning']) {
+        counter += 1;
+        that.doScheduledActivity(options['Friday Morning'],
+                                 that.schedule.friday.morning,
+                                 that.schedule.friday.morning.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    if (options['Friday Evening']) {
+        counter += 1;
+        that.doScheduledActivity(options['Friday Evening'],
+                                 that.schedule.friday.evening,
+                                 that.schedule.friday.evening.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    if (options['Saturday Morning']) {
+        counter += 1;
+        that.doScheduledActivity(options['Saturday Morning'],
+                                 that.schedule.saturday.morning,
+                                 that.schedule.saturday.morning.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    if (options['Saturday Evening']) {
+        counter += 1;
+        that.doScheduledActivity(options['Saturday Evening'],
+                                 that.schedule.saturday.evening,
+                                 that.schedule.saturday.evening.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    if (options['Sunday Morning']) {
+        counter += 1;
+        that.doScheduledActivity(options['Sunday Morning'],
+                                 that.schedule.sunday.morning,
+                                 that.schedule.sunday.morning.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    if (options['Sunday Evening']) {
+        counter += 1;
+        that.doScheduledActivity(options['Sunday Evening'],
+                                 that.schedule.sunday.evening,
+                                 that.schedule.sunday.evening.results ? patriarch : matriarch,
+                                 game, complete);
+    }
+    
+    complete();
+};
+
 CourtSchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
-    // add any results to game event queue since the court event queue is to set up a coming court
+    // Go through the activities and check the appropriate skill.
+    // Add any results to game event queue since the court will
+    // be gone by the time the game turn is over.
+    //
+    // Also do an intrigue check.
+    var that = this;
+
+    Family.findById(game.playerFamily, function (err, family) {
+        // get attendance first as for loop can be in arbitrary order
+        var prop,
+            doneLadies = 0 === family.ladies.length || 'entourage' !== options.attendance,
+            donePatriarch = false,
+            complete = function () {
+                if (donePatriarch && doneLadies) {
+                    // if no lady is present to do intrigue, then the
+                    // patriarch does any intrigue checks
+                    if (true === doneLadies) {doneLadies = donePatriarch; }
+                    
+                    that.walkSchedule(options, game, donePatriarch, doneLadies, cb);
+                }
+            };
+        if (err) {return err; }
+        
+        if (!doneLadies) {
+            // do an intrigue check with the highest lady in attendance
+            family.populate({path: 'ladies', model: 'Lady'}, function (err, f) {
+                var best;
+                if (err) {return err; }
+                
+                f.ladies.forEach(function (lady) {
+                    if (!best || best.getStat('Mind').level < lady.getStat('Mind').level) {
+                        best = lady;
+                    }
+                });
+                
+                doneLadies = best;
+                complete();
+            });
+        }
+        
+        Knight.findById(family.patriarch, function (err, patriarch) {
+            if (err) {return err; }
+            
+            donePatriarch = patriarch;
+            complete();
+        });
+    });
 };
 
 

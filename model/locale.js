@@ -12,7 +12,7 @@ var mongoose = require('mongoose'),
     Storyline = require('./storyline'),
     Character = require('./character'),
     Steward = require('./steward'),
-    Skill = require('./skill'),
+    Statistic = require('./statistic'),
     defaultObjects = require('./defaultObjects');
 
 var LocaleSchema = new Schema({
@@ -28,7 +28,7 @@ var LocaleSchema = new Schema({
     taxes:          Number,
     population:     {noncombatants: Number, militia: Number, archers: Number, karls: Number},
     train:          {militia: Number, archers: Number, karls: Number},
-    hate:           Number,
+    hate:           [Statistic.schema],
     quest:          [Storyline.schema], //{revolt: ObjectId, royal: ObjectId, fey: ObjectId, religious: ObjectId},
     queuedEvents:   [Storyline.schema]
 });
@@ -47,7 +47,7 @@ LocaleSchema.statics.factory = function (template, cb) {
                               militia: (Math.floor(Math.random() * 20) + 1) * 5,
                               karls: Math.floor(Math.random() * 6)
                              },
-                             hate: template.hate || 0
+                             hate: Statistic.factory({level: template.hate || 0})
                             });
 
     defaultObjects.investments.forEach(function (i) {   // TODO only allow the right subset
@@ -180,11 +180,11 @@ LocaleSchema.methods.changeHate = function (hate, cb) {
     "use strict";
     var that = this;
     
-    this.hate += hate;
+    this.hate[0].increase(hate);
 
     // check for hate-filled peasant 'quest' against the landlord
     // only check when hate changes
-    if (!this.quest && (Math.floor(Math.random() * 20) + this.hate) >= 20) {
+    if (!this.quest && 'Critical Success' === this.hate[0].difficultyCheck(3)) {
         Storyline.find({name: 'revolt'}, function (err, qA) {
             if (err) {return err; }
 
@@ -326,10 +326,8 @@ LocaleSchema.methods.stewardCheck = function () {
     "use strict";
     var that = this,
         d3 = function () {return Math.floor(Math.random() * 3); },
-        d2 = function () {return Math.floor(Math.random() * 2); },
-        stewardry = that.steward.stats.length > 0 ? that.steward.stats[0].getSkill('Stewardry') : null,
-        weather = Skill.factory({name: 'Weather', level: d3() + d3() + d2()}),
-        check = stewardry ? stewardry.opposed(weather, 0, that.hate) : 'Fumble';
+        stewardry = that.steward.stats.length > 0 ? that.steward.stats[0].getStat('Stewardry') : null,
+        check = stewardry ? stewardry.opposedCheck(d3() + d3() + d3(), 0, that.hate[0].level) : 'Fumble';
     
     return check;
 };
@@ -351,6 +349,10 @@ LocaleSchema.methods.calculateHarvest = function (cb) {
     case 'Success':
         result = this.taxes;
         popGrowth = this.population.noncombatants / 50 + Math.floor(Math.random() * 10);
+        break;
+    case 'Tie':
+        result = Math.floor(this.taxes * 0.75);
+        popGrowth = this.population.noncombatants / 50 + Math.floor(Math.random() * 5);
         break;
     case 'Failure':
         result = Math.floor(that.taxes / 2);

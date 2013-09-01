@@ -124,7 +124,7 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                 if (err) {return err; }
                 
                 // find the lady with the highest stewardry to take care of the holding
-                if (!stewardLady || stewardLady.getSkill('Stewardry').level > lady.getSkill('Stewardry').level) {
+                if (!stewardLady || stewardLady.getStat('Stewardry').level > lady.getStat('Stewardry').level) {
                     stewardLady = lady;
                 }
                 

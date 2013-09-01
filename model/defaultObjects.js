@@ -153,38 +153,33 @@ var defaultObjects = {
                      'Feunette': "Flee, loves? Nay. Sir Elmig knows what he says and those brutes will march to Caercolun this summer."
                     },
             news: "We muster for King Uther in two weeks at Salisbury. We go south to fight King Aelle as Uther Pendragon commands. Duke Caercolun must needs hold off Aethelswith's Saxon hordes to the east of his own accord.",
-            intrigue: {Fumble: "\"Earl Aralyd's daughter Ilaine is madly in love with Sir Elmig. She begged the Earl to serve Sir Elmig at the Pentecost feast personally.\"",
-                       Success: "\"Merlin is absent because he is so exhausted from using so much magic last year to help King Uther win a victory in the Battle of Damen. But the king has promised to help Duke Ulfius of Silchester.\"\r\n\"You do know, don’t you, that the mages must sleep when they use their powers to such a great extent? And the king is so impetuous without the magician’s guidance. I hope he is not acting too hastily!\"",
+            intrigue: {Fumble: "Earl Aralyd's daughter Ilaine is madly in love with Sir Elmig. She begged the Earl to serve Sir Elmig at the Pentecost feast personally.",
+                       Success: "Merlin is absent because he is so exhausted from using so much magic last year to help King Uther win a victory in the Battle of Damen. But the king has promised to help Duke Ulfius of Silchester.\"\r\n\"You do know, don’t you, that the mages must sleep when they use their powers to such a great extent? And the king is so impetuous without the magician’s guidance. I hope he is not acting too hastily!",
                        'Critical Success': "Gagyr ap Agragore, the praetor of Royston, is absent this Pentecost because he spends more time with Earl Huntington than Earl Hertford. Rumor has it that the praetor's daughter will marry Earl Huntington's eldest son."},
             schedule: {
                 saturday: {
                     morning: [
                         {
                             name: 'Hunting east of the Gentile River',
-                            check: 'body',
-                            difficulty: 10,
+                            check: 'Body',
+                            difficulty: 2,
                             results: {
                                 Fumble: 'Offend Caercolun',
-                                Success: 'Befriend Caercolun',
+                                Success: 'Offer Feunette',
                                 'Critical Success': 'Befriend Caercolun'
                             }
                         },
                         {
                             name: 'Socialize at Castle Hertford',
-                            check: 'mind',
-                            difficulty: 10,
-                            result: {
-                                Fumble: 'Offend Gwenhwyfer',
-                                Success: 'Offer Feunette',
-                                'Critical Success': 'Befriend Gwenhwyfer'
-                            }
+                            check: 'Mind',
+                            difficulty: 2
                         }
                     ],
                     evening: [
                         {
                             name: 'Feast at Great Hall',
-                            check: 'mind',
-                            difficulty: 10,
+                            check: 'Leadership',
+                            difficulty: 1,
                             result: {
                                 Fumble: 'Offend Gwenhwyfer',
                                 Success: 'Flirt with Wench',
@@ -193,8 +188,8 @@ var defaultObjects = {
                         },
                         {
                             name: 'Vigil',
-                            check: 'soul',
-                            difficulty: 10,
+                            check: 'Soul',
+                            difficulty: 3,
                             result: {
                                 Fumble: 'Shaken Faith',
                                 Success: 'Befriend Chaplain',

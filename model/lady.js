@@ -8,7 +8,7 @@ var mongoose = require('mongoose'),
     extend = require('mongoose-schema-extend'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Skill = require('./skill'),
+    Statistic = require('./statistic'),
     Character = require('./character');
 
 var LadySchema = Character.schema.extend({
@@ -27,10 +27,10 @@ LadySchema.statics.factory = function (template, game, cb) {
 
     result.age = template.age || 16;
     result.fertility = template.fertility || (this.age > 14 && this.age < 38);
-    result.soul += 1;
-    result.body -= 1;
-    result.honor = 4;
-    result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
+    result.getStat("Body").increase(-1);
+    result.getStat("Soul").increase(1);
+    result.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
+    result.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
 
     result.save(cb);
 

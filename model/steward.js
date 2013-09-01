@@ -12,7 +12,7 @@ var mongoose = require('mongoose'),
     extend = require('mongoose-schema-extend'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Skill = require('./skill'),
+    Statistic = require('./statistic'),
     Character = require('./character');
 
 var StewardSchema = Character.schema.extend({
@@ -27,11 +27,11 @@ StewardSchema.statics.factory = function (template, game) {
     result.profession = 'Steward';
 
     if (!template.age) {result.age = 21; }
-    result.honor = 4;
-    result.skills.push(Skill.factory({name: 'Stewardry', level: 3}));
-    result.skills.push(Skill.factory({name: 'Swordsmanship', level: 1}));
-    result.skills.push(Skill.factory({name: 'Horsemanship', level: 1}));
-    result.skills.push(Skill.factory({name: 'Spear', level: 1}));
+    result.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
+    result.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
+    result.statistics.push(Statistic.factory({name: 'Swordsmanship', level: 1}));
+    result.statistics.push(Statistic.factory({name: 'Horsemanship', level: 1}));
+    result.statistics.push(Statistic.factory({name: 'Spear', level: 1}));
 
     return result;
 };

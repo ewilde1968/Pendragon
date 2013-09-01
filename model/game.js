@@ -210,13 +210,12 @@ GameSchema.methods.nextTurn = function (options, cb) {
             if (err) {return err; }
         
             if (court) {
-                court.nextTurn(options.court, that, function () {
-                    delete that.court;
+                options.changes.court.attendance = options.changes.attendance;
+                court.nextTurn(options.changes.court, that, function () {
                     doneC = true;
                     complete();
                 });
             } else {
-                delete that.court;
                 doneC = true;
                 complete();
             }
@@ -316,7 +315,7 @@ GameSchema.methods.nextTurn = function (options, cb) {
                     complete();
                 });
             } else {
-                delete that.court;
+                that.court = null;
 
                 doneNextC = true;
                 complete();

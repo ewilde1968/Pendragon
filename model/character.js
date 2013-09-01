@@ -8,7 +8,7 @@ var Character; // forward to clear out JSLint errors
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
-    Skill = require('./skill'),
+    Statistic = require('./statistic'),
     Storyline = require('./storyline');
 
 
@@ -18,6 +18,8 @@ decreptitudeYear[40] = -1;
 decreptitudeYear[70] = -1;
 decreptitudeYear[90] = -1;
 
+// Character stats and skills are all 0-10
+// A character stat is treated exactly as a skill for tests
 
 var CharacterSchema = new Schema({
     name:           { type: String, required: true, index: true },
@@ -30,7 +32,7 @@ var CharacterSchema = new Schema({
     soul:           Number,
     honor:          Number,
     fertility:      Boolean,
-    skills:         [Skill.schema],
+    statistics:     [Statistic.schema],
     armor:          String,
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
@@ -67,42 +69,45 @@ CharacterSchema.methods.generateStats = function () {
     switch (focus) {
     case 0:
         this.bodyType = 'ectomorph';
-        this.body = 3;
-        this.mind = 5;
-        this.soul = 4;
-        this.skills.push(Skill.factory({name: 'Learning', level: 3}));
+        this.statistics.push(Statistic.factory({name: 'Body', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Health', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Mind', level: 7}));
+        this.statistics.push(Statistic.factory({name: 'Soul', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Learning', level: 3}));
         break;
     case 1:
         this.bodyType = 'mesomorph';
-        this.body = 5;
-        this.mind = 3;
-        this.soul = 4;
-        this.skills.push(Skill.factory({name: 'Brawling', level: 3}));
+        this.statistics.push(Statistic.factory({name: 'Body', level: 7}));
+        this.statistics.push(Statistic.factory({name: 'Health', level: 7}));
+        this.statistics.push(Statistic.factory({name: 'Mind', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Soul', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Brawling', level: 3}));
         break;
     case 2:
-        this.bodyType = 'spiritual ascetic';
-        this.body = 3;
-        this.mind = 4;
-        this.soul = 5;
-        this.skills.push(Skill.factory({name: 'Orate', level: 3}));
+        this.bodyType = 'leader';
+        this.statistics.push(Statistic.factory({name: 'Body', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Health', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Mind', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Soul', level: 7}));
+        this.statistics.push(Statistic.factory({name: 'Leadership', level: 3}));
         break;
     case 3:
         this.bodyType = 'spiritual dunce';
-        this.body = 4;
-        this.mind = 3;
-        this.soul = 5;
-        this.skills.push(Skill.factory({name: 'Religion', level: 3}));
+        this.statistics.push(Statistic.factory({name: 'Body', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Health', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Mind', level: 4}));
+        this.statistics.push(Statistic.factory({name: 'Soul', level: 7}));
+        this.statistics.push(Statistic.factory({name: 'Religion', level: 3}));
         break;
     case 4: // balance
         this.bodyType = 'cygnus';
-        this.body = 4;
-        this.mind = 4;
-        this.soul = 4;
-        this.skills.push(Skill.factory({name: 'Religion', level: 3}));
+        this.statistics.push(Statistic.factory({name: 'Body', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Health', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Mind', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Soul', level: 5}));
+        this.statistics.push(Statistic.factory({name: 'Religion', level: 3}));
         break;
     }
-
-    this.health = this.body;
     
     return this;
 };
@@ -166,7 +171,7 @@ CharacterSchema.methods.mergeOptions = function (options) {
         if (options.hasOwnProperty(prop)) {
             switch (prop) {
             case 'experience':
-                this.skills.forEach(setExperience);
+                this.statistics.forEach(setExperience);
                 break;
             case 'name':
             case 'age':
@@ -202,19 +207,30 @@ CharacterSchema.methods.increaseAge = function (years) {
     return this;
 };
 
-CharacterSchema.methods.increaseSkill = function (name, value) {
+CharacterSchema.methods.increaseStat = function (name, value) {
     "use strict";
-    this.skills.forEach(function (s) {
-        s.increase(value);
+    var stat;
+    
+    this.statistics.forEach(function (s) {
+        if (s.name === name) {
+            stat = s;
+        }
     });
+    
+    if (!stat) {
+        stat = Statistic.factory({name: name, level: 0});
+        this.statistics.push(stat);
+    }
+    
+    stat.increase(value);
     
     return this;
 };
 
-CharacterSchema.methods.getSkill = function (name) {
+CharacterSchema.methods.getStat = function (name) {
     "use strict";
     var result = null;
-    this.skills.forEach(function (s) {if (name === s.name) {result = s; } });
+    this.statistics.forEach(function (s) {if (name === s.name) {result = s; } });
     
     return result;
 };
@@ -267,7 +283,7 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
         that.increaseAge();
 
         // experience checks for all family members
-        that.skills.forEach(function (s) {s.experienceCheck(); });
+        that.statistics.forEach(function (s) {s.experienceCheck(); });
         
         cost = that.cost();
         break;
