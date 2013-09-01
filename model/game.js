@@ -175,6 +175,10 @@ GameSchema.methods.getEvents = function (cb) {
 
 GameSchema.methods.nextTurn = function (options, cb) {
     "use strict";
+    // Every Year
+    // TODO determine quests
+    // TODO map
+    
     var that = this,
         nextSeason,
         nextYear = this.turn.year,
@@ -241,6 +245,11 @@ GameSchema.methods.nextTurn = function (options, cb) {
     switch (this.turn.quarter) {
     case 'Winter':
         // determine holding events
+        // TODO determine family births
+        // TODO steward advice
+        nextSeason = 'Spring';
+        break;
+    case 'Spring':
         // determine pentacost court plans
             //
             // Court is held every Pentacost and Christmas with a few
@@ -248,6 +257,9 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // both; though the location of the court varies by year. Whether
             // or not there is a king, Earls often hold their own court for
             // either Pentacost or Christmas or both.
+            //
+            // TODO: Currently there is no choice for the character to not attend
+            // court or to attend the court of their choice.
             //
             // To hold a court, determine which lords (if any) invites the
             // player to their court for Pentacost. Then determine who else
@@ -263,22 +275,16 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // open time slots in the court's calendar. Characters participating
             // in an event can perform an opposed check for special results.
             //
-        // TODO determine family births
-        // TODO steward advice
-        nextSeason = 'Spring';
-        break;
-    case 'Spring':
-        // TODO determine pentacost court results
-        // TODO determine any marriages or daliances
-        // TODO determine campaign season
-        // TODO determine quests
+            // At court, each unmarried character has a slim change of being
+            // tempted into a dalliance.
+            //
+        // TODO determine results from any daliances
         nextSeason = 'Summer';
         break;
     case 'Summer':
+        // TODO determine campaign season
         // determine training results
         // TODO determine pregnancies
-        // TODO campaign season results
-        // TODO determine Christmas court plans
         nextSeason = 'Fall';
         break;
     case 'Fall':
@@ -289,9 +295,8 @@ GameSchema.methods.nextTurn = function (options, cb) {
         // determine next year's projected income
         // determine investment completions
         // experience checks for all family members
+        // determine Christmas court
         // TODO determine generosity results
-        // TODO determine Christmas court results
-        // TODO determine any marriages or daliances
         nextSeason = 'Winter';
         nextYear += 1;
         break;
