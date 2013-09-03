@@ -23,7 +23,7 @@ StorylineSchema.add({
 });
 
 
-StorylineSchema.statics.factory = function (template) {
+StorylineSchema.statics.factory = function (template, isTemplate) {
     "use strict";
     var result = new Storyline({
         name:       template.name,
@@ -31,7 +31,8 @@ StorylineSchema.statics.factory = function (template) {
         quarter:    template.quarter,
         title:      template.title || '',
         message:    template.message || '',
-        label:      template.label
+        label:      template.label,
+        isTemplate: isTemplate
     });
 
     if (template.requirements) {
@@ -65,6 +66,33 @@ StorylineSchema.methods.filterByTurn = function (turn, satisfies) {
     }
     
     return false;
+};
+
+StorylineSchema.methods.setFutureTime = function (thisTurn, years, seasons) {
+    "use strict";
+    this.year = thisTurn.year + years + Math.floor(seasons / 4);
+    this.quarter = thisTurn.quarter;
+
+    seasons = seasons % 4;
+
+    while (seasons) {
+        switch (this.quarter) {
+        case 'Winter':
+            this.quarter = 'Spring';
+            break;
+        case 'Spring':
+            this.quarter = 'Summer';
+            break;
+        case 'Summer':
+            this.quarter = 'Fall';
+            break;
+        case 'Fall':
+            this.quarter = 'Winter';
+            this.year += 1;
+            break;
+        }
+        seasons -= 1;
+    }
 };
 
 

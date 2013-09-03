@@ -462,6 +462,34 @@ var defaultObjects = {
             message: 'And deadly too.',
             actions: {log: true},
             choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Multiple Pregnancy',
+            title: 'Multiple Pregnancy',
+            message: 'Oh my!',
+            actions: {log: true, pregnancy: 'multiple'},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Pregnancy',
+            title: 'Pregnancy',
+            message: 'Boy or Girl',
+            actions: {log: true, pregnancy: 'single'},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Fatal Miscarriage',
+            title: 'Fatal Miscarriage',
+            message: 'Oh my!',
+            actions: {log: true, death: true},
+            choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Fathered Bastard',
+            title: 'Fathered Bastard',
+            message: 'Oh my!',
+            actions: {log: true, bastard: true},
+            choices: [{label: 'Done'}]
         }
     ]
 };

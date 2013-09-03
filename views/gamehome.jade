@@ -457,6 +457,18 @@ block content
                             case 'choice':
                                 changesObj[target] = action[prop];
                                 break;
+                            case 'pregnancy':
+                                var cObj = changesObj[target] || {};
+                                
+                                cObj.pregnancy = action[prop];
+                                changesObj[target] = cObj;
+                                break;
+                            case 'death':
+                                var cObj = changesObj[target] || {};
+                                
+                                cObj.death = action[prop];
+                                changesObj[target] = cObj;
+                                break;
                             case 'log':
                             default:
                                 break;

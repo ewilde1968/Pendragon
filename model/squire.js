@@ -9,7 +9,8 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     Statistic = require('./statistic'),
-    Character = require('./character');
+    Character = require('./character'),
+    Storyline = require('./storyline');
 
 var SquireSchema = Character.schema.extend({
 });
@@ -39,23 +40,60 @@ SquireSchema.statics.factory = function (template, game, cb, firstKnight) {
     return result;
 };
 
-SquireSchema.methods.increaseAge = function () {
+SquireSchema.methods.increaseAge = function (trained) {
     "use strict";
     this.prototype.increaseAge();
 
-    if (this.age === 21) {
-        // coming of age
-        this.increaseSkill('Swordsmanship');
-        this.increaseSkill('Horsemanship');
-        this.increaseSkill('Spear');
-    } else if (this.age === 19) {
-        // gaining skill
-        this.increaseSkill('Swordsmanship');
-        this.increaseSkill('Horsemanship');
-        this.increaseSkill('Spear');
+    if (trained && this.age < 21) {
+        this.getStat('Swordsmanship').experience = true;
+        this.getStat('Horesmanship').experience = true;
+        this.getStat('Spear').experience = true;
     }
     
     return this;
+};
+
+SquireSchema.methods.dalliance = function (family, game, partnerId, cb) {
+    "use strict";
+    var that = this,
+        bonus = 0,
+        chance = Statistic.factory({level: 6}),
+        complete = function (eventName, seasons) {
+            Storyline.findOne({name: eventName, isTemplate: true}, function (err, ev) {
+                if (err) {return err; }
+                
+                ev.isTemplate = false;
+                if (!ev.actions) {ev.actions = {}; }
+                ev.actions.target = that.id;
+                ev.actions.partner = partnerId;
+                ev.setFutureTime(game.turn, 0, 3);
+                
+                if (ev) {that.queuedEvents.push(ev); }
+                if (cb) {cb(); }
+            });
+        };
+    
+    if (this.fertility) {
+        chance = chance.difficultyCheck(4, bonus);
+        switch (chance) {
+        case 'Critical Success':
+            // definitely a boy
+            complete('Fathered Bastard', 3);
+            break;
+        case 'Success':
+            // one child
+            if (0 === Math.floor(Math.random() * 2)) {
+                complete('Fathered Bastard', 3);
+            } else if (cb) {
+                cb();
+            }
+            break;
+        default:
+            // no children
+            if (cb) {cb(); }
+            break;
+        }
+    }
 };
 
 

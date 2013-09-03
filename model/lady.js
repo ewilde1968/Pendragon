@@ -9,7 +9,9 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     Statistic = require('./statistic'),
-    Character = require('./character');
+    Character = require('./character'),
+    Storyline = require('./storyline');
+
 
 var LadySchema = Character.schema.extend({
     babies:     Number,                     // # babies in the womb
@@ -47,6 +49,59 @@ LadySchema.methods.increaseAge = function () {
     }
     
     return this;
+};
+
+LadySchema.methods.marriagable = function () {
+    "use strict";
+    return !this.spouse && this.fertility;
+};
+
+LadySchema.methods.dalliance = function (family, game, partnerId, cb) {
+    "use strict";
+    var that = this,
+        bonus = 0,
+        chance = Statistic.factory({level: 6}),
+        complete = function (eventName, seasons) {
+            Storyline.findOne({name: eventName, isTemplate: true}, function (err, ev) {
+                if (err) {return err; }
+                
+                ev.isTemplate = false;
+                if (!ev.actions) {ev.actions = {}; }
+                ev.actions.target = that.id;
+                ev.actions.partner = partnerId;
+                ev.setFutureTime(game.turn, 0, 3);
+                
+                if (ev) {that.queuedEvents.push(ev); }
+                if (cb) {cb(); }
+            });
+        };
+    
+    if (this.fertility) {
+        if ('Rich' === family.livingStandard) {bonus = 1; }
+        if ('Opulent' === family.livingStandard) {bonus = 2; }
+        
+        if (this.age > 34) {bonus -= 1; }
+        
+        chance = chance.difficultyCheck(4, bonus);
+        switch (chance) {
+        case 'Critical Success':
+            // multiples, will roll 2d2 to see how many children
+            complete('Multiple Pregnancy', 3);
+            break;
+        case 'Success':
+            // one child
+            complete('Pregnancy', 3);
+            break;
+        case 'Fumble':
+            // complication
+            complete('Fatal Miscarriage', 2);
+            break;
+        default:
+            // no children
+            if (cb) {cb(); }
+            break;
+        }
+    }
 };
 
 LadySchema.methods.nextTurn = function (options, game, cb) {

@@ -127,7 +127,7 @@ GameSchema.methods.getEvents = function (cb) {
             }
         };
 
-    // order of events is:
+    // TODO: order of events is:
     //    game events (year or season events for the whole of the game)
     //    family events
     //    patriarch events

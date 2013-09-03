@@ -36,7 +36,8 @@ var CharacterSchema = new Schema({
     armor:          String,
     shield:         Boolean,
     horses:         [{name: String, breed: String, barding: String, health: Number}],
-    parents:        [ObjectId],
+    parents:        [{type: ObjectId, ref: 'Character'}],
+    spouse:         {type: ObjectId, ref: 'Character'},
     game:           ObjectId,
     queuedEvents:   [Storyline.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
@@ -233,6 +234,52 @@ CharacterSchema.methods.getStat = function (name) {
     this.statistics.forEach(function (s) {if (name === s.name) {result = s; } });
     
     return result;
+};
+
+CharacterSchema.methods.marriagable = function () {
+    "use strict";
+    return !this.spouse;
+};
+
+CharacterSchema.methods.dalliance = function (family, game, partnerId, cb) {
+    "use strict";
+    // no-op for most people
+    if (cb) {cb(); }
+};
+
+CharacterSchema.methods.temptation = function (sin, family, game, data, cb) {
+    "use strict";
+    // data is different per sin
+    var check = this.getStat('Soul').difficultyCheck(5),
+        doCB = true;
+
+    switch (sin) {
+    case 'Lust':
+        if (this.fertility && (check === 'Failure' || check === 'Fumble')) {
+            doCB = false;
+            this.dalliance(family, game, data, cb);
+        }
+        break;
+    case 'Gluttony':
+        break;
+    case 'Greed':
+        break;
+    case 'Sloth':
+        break;
+    case 'Wrath':
+        break;
+    case 'Envy':
+        break;
+    case 'Pride':
+        break;
+    default:
+        throw {
+            name: 'Invalid Temptation',
+            message: sin + ' temptation for ' + this.name
+        };
+    }
+    
+    if (doCB && cb) {cb(); }
 };
 
 CharacterSchema.methods.cost = function (livingStandard) {

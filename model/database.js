@@ -46,7 +46,7 @@ var database = function (databaseName) {
                     courtTree = [];
                 
                 defaultObjects.eventTree.forEach(function (e) {
-                    eventTree.push(Storyline.factory(e));
+                    eventTree.push(Storyline.factory(e, true));
                 });
                 Storyline.create(eventTree, function (err) {
                     if (err) {return err; }
