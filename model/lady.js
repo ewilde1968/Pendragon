@@ -15,26 +15,27 @@ var mongoose = require('mongoose'),
 
 var LadySchema = Character.schema.extend({
     babies:     Number,                     // # babies in the womb
-    father:     ObjectId,                   // father of any babies in the womb
-    husband:    ObjectId
+    father:     ObjectId                    // father of any babies in the womb
 });
 
 
-LadySchema.statics.factory = function (template, game, cb) {
+LadySchema.statics.factory = function (template, game, family, cb) {
     "use strict";
-    var result = new Lady(template);
-    result.initialize(template, game);
+    var result = new Lady(template),
+        that = this;
     
-    result.profession = 'Lady';
+    result.initialize(template, game, family, function (l) {
+        l.profession = 'Lady';
 
-    result.age = template.age || 16;
-    result.fertility = template.fertility || (this.age > 14 && this.age < 38);
-    result.getStat("Body").increase(-1);
-    result.getStat("Soul").increase(1);
-    result.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
-    result.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
+        l.age = template.age || 16;
+        l.fertility = template.fertility || (that.age > 14 && that.age < 38);
+        l.getStat("Body").increase(-1);
+        l.getStat("Soul").increase(1);
+        l.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
+        l.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
 
-    result.save(cb);
+        l.save(cb);
+    });
 
     return result;
 };
@@ -62,17 +63,17 @@ LadySchema.methods.dalliance = function (family, game, partnerId, cb) {
         bonus = 0,
         chance = Statistic.factory({level: 6}),
         complete = function (eventName, seasons) {
-            Storyline.findOne({name: eventName, isTemplate: true}, function (err, ev) {
+            Storyline.findByName(eventName, function (err, ev) {
                 if (err) {return err; }
                 
-                ev.isTemplate = false;
                 if (!ev.actions) {ev.actions = {}; }
                 ev.actions.target = that.id;
                 ev.actions.partner = partnerId;
                 ev.setFutureTime(game.turn, 0, 3);
                 
                 if (ev) {that.queuedEvents.push(ev); }
-                if (cb) {cb(); }
+                
+                that.save(cb);
             });
         };
     
@@ -102,29 +103,6 @@ LadySchema.methods.dalliance = function (family, game, partnerId, cb) {
             break;
         }
     }
-};
-
-LadySchema.methods.nextTurn = function (options, game, cb) {
-    "use strict";
-    switch (game.turn.quarter) {
-    case "Winter":
-        break;
-    case "Spring":
-        break;
-    case "Summer":
-        break;
-    case "Fall":
-        break;
-    default:
-        throw {
-            name: 'Invalid quarter',
-            message: 'LadySchema.doTurn, quarter ' + game.turn.quarter
-        };
-    }
-
-    Character.nextTurn.apply(this, [options, game, function (cost) {
-        if (cb) {cb(cost); }
-    }]);
 };
 
 

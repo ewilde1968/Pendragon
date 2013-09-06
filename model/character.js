@@ -9,7 +9,8 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
     Statistic = require('./statistic'),
-    Storyline = require('./storyline');
+    Storyline = require('./storyline'),
+    Family = require('./family');
 
 
 var decreptitudeYear = [];
@@ -23,6 +24,8 @@ decreptitudeYear[90] = -1;
 
 var CharacterSchema = new Schema({
     name:           { type: String, required: true, index: true },
+    game:           ObjectId,
+    family:         { type: ObjectId, ref: 'Family', index: true },
     profession:     { type: String, required: true },
     age:            Number,
     bodyType:       String,
@@ -38,28 +41,42 @@ var CharacterSchema = new Schema({
     horses:         [{name: String, breed: String, barding: String, health: Number}],
     parents:        [{type: ObjectId, ref: 'Character'}],
     spouse:         {type: ObjectId, ref: 'Character'},
-    game:           ObjectId,
     queuedEvents:   [Storyline.schema]
 }, {collection: 'characters', discriminatorKey: '_type' });
 
 
-CharacterSchema.statics.factory = function (template, game) {
+CharacterSchema.statics.factory = function (template, game, family, cb) {
     "use strict";
     var result = new Character(template);
-    this.initialize(template, game);
+    this.initialize(template, game, family, cb);
     
     return result;
 };
 
-CharacterSchema.methods.initialize = function (template, game) {
+CharacterSchema.methods.initialize = function (template, game, famille, cb) {
     "use strict";
+    var that = this;
+    
     if (!template.mind || !template.body || !template.soul) {
-        this.generateStats();   // TODO find inheretance pattern
+        that.generateStats();   // TODO find inheretance pattern
     }
     
     if (template.age >= 14) {this.fertility = true; }
     
-    if (game) {this.game = game; }
+    if (game) {that.game = game; }
+    if (famille) {
+        if (famille.id) {
+            that.family = famille.id;
+            if (cb) {cb(that); }
+        } else {
+            // family must be a name
+            Family.findOne({game: game, name: famille}, function (err, f) {
+                if (err) {return err; }
+                if (f) {that.family = f.id; }
+                if (cb) {cb(that); }
+            });
+        }
+    }
     
     return this;
 };
@@ -164,7 +181,8 @@ CharacterSchema.methods.getEvents = function (turn, result) {
 
 CharacterSchema.methods.mergeOptions = function (options) {
     "use strict";
-    var prop,
+    var that = this,
+        prop,
         setExperience = function (s) {
             if (options.experience.indexOf(s.name) !== -1) {s.experience = true; }
         };
@@ -172,17 +190,19 @@ CharacterSchema.methods.mergeOptions = function (options) {
         if (options.hasOwnProperty(prop)) {
             switch (prop) {
             case 'experience':
-                this.statistics.forEach(setExperience);
+                that.statistics.forEach(setExperience);
                 break;
             case 'name':
             case 'age':
             case 'profession':
-            case 'health':
-            case 'body':
-            case 'mind':
-            case 'spirit':
-            case 'honor':
-                this[prop] = options[prop];
+                that[prop] = options[prop];
+                break;
+            case 'Health':
+            case 'Body':
+            case 'Mind':
+            case 'Spirit':
+            case 'Honor':
+                that.getStat(prop).level = options[prop];
                 break;
             default:
                 break;
@@ -310,13 +330,63 @@ CharacterSchema.methods.cost = function (livingStandard) {
     return 0;
 };
 
+CharacterSchema.methods.marry = function (spouse, game, cb) {
+    "use strict";
+    var that = this,
+        complete = function (partner) {
+            that.spouse = partner.id;
+            partner.family = that.family;
+            Family.findById(that.family, function (err, f) {
+                if (err) {return err; }
+                partner.dalliance(f, game, that.id, cb);
+            });
+        };
+    
+    Character.findById(spouse, function (err, s) {
+        if (err) {return err; }
+        if (s) {
+            complete(s);
+        } else {
+            Character.findOne({name: spouse, game: game.id}, function (err, sp) {
+                if (err) {return err; }
+                if (sp) {
+                    complete(sp);
+                } else {
+                    throw {
+                        name: 'Cannot find spouse',
+                        message: that.name + ' cannot marry ' + spouse
+                    };
+                }
+            });
+        }
+    });
+};
+
 CharacterSchema.methods.nextTurn = function (options, game, cb) {
     "use strict";
     var that = this,
-        cost = 0;
+        cost = 0,
+        doneMarry = !options || !options.marry,
+        doneSpouse = doneMarry && !that.spouse,
+        doneYear = false,
+        complete = function () {
+            if (doneSpouse && doneMarry && doneYear) {
+                that.save(function (err) {
+                    if (err) {return err; }
+                    if (cb) {cb(cost); }
+                });
+            }
+        };
     
     that.mergeOptions(options);
     that.clearEvents(game.turn);
+    
+    if (!doneMarry) {
+        that.marry(options.marry, game, function () {
+            doneMarry = true;
+            complete();
+        });
+    }
     
     switch (game.turn.quarter) {
     case "Winter":
@@ -324,6 +394,25 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
     case "Spring":
         break;
     case "Summer":
+        if (that.spouse) {
+            Family.findById(that.family, function (err, f) {
+                if (err) {return err; }
+                Character.findById(that.spouse, function (err, s) {
+                    if (err) {return err; }
+
+                    if (s) {
+                        s.dalliance(f, game, that.id, function () {
+                            doneSpouse = true;
+                            complete();
+                        });
+                    } else {
+                        that.spouse = null;
+                        doneSpouse = true;
+                        complete();
+                    }
+                });
+            });
+        }
         break;
     case "Fall":
         // age each character a year
@@ -337,11 +426,9 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
     default:
         break;
     }
-    
-    that.save(function (err) {
-        if (err) {return err; }
-        cb(cost);
-    });
+
+    doneYear = true;
+    complete();
 };
 
 

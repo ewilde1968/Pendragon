@@ -12,6 +12,8 @@ var mongoose = require('mongoose'),
     Locale = require('./locale'),
     Character = require('./character'),
     Knight = require('./knight'),
+    Lady = require('./lady'),
+    Squire = require('./squire'),
     Storyline = require('./storyline');
 
 var CourtSchema = new Schema({
@@ -312,21 +314,26 @@ CourtSchema.methods.doScheduledActivity = function (choice, activities, activist
     //      honor checks - Knighting, Audience
     var that = this,
         doneActivities = 0 === activities.length,
-        stat,
-        roll,
+        actEv = null,
         complete = function (ev) {
             if (ev) {game.queuedEvents.push(ev); }
             if (doneActivities && cb) {cb(); }
         };
     
     activities.forEach(function (activity) {
+        var stat,
+            roll;
+        
         if (choice === activity.name) {
+            doneActivities = true;
+            
             stat = activist.getStat(activity.check);
             if (stat) {
                 roll = stat.difficultyCheck(activity.difficulty);
                 if (activity.results) {
                     if (activity.results[roll]) {
-                        Storyline.findOne({name: activity.results[roll]}, function (err, ev) {
+                        doneActivities = false;
+                        Storyline.findByName(activity.results[roll], function (err, ev) {
                             if (err) {return err; }
                             
                             doneActivities = true;
@@ -335,17 +342,18 @@ CourtSchema.methods.doScheduledActivity = function (choice, activities, activist
                     }
                 } else {
                     if (that.intrigue[roll]) {
-                        doneActivities = true;
-                        complete(Storyline.factory({
+                        actEv = Storyline.factory({
                             title: 'Intrigue',
                             message: that.intrigue[roll],
                             choices: [{label: 'Done'}]
-                        }));
+                        });
                     }
                 }
             }
         }
     });
+    
+    complete(actEv);
 };
 
 CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch, cb) {
@@ -415,9 +423,9 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
     Family.findById(game.playerFamily, function (err, family) {
         // get attendance first as for loop can be in arbitrary order
         var prop,
-            doneLadies = 0 === family.ladies.length || 'entourage' !== options.attendance,
+            doneLadies = !options || 'entourage' !== options.attendance,
             donePatriarch = false,
-            doneExtended = 0 === family.extended.length || 'entourage' !== options.attendance,
+            doneExtended = !options || 'entourage' !== options.attendance,
             complete = function () {
                 if (donePatriarch && doneExtended && doneLadies) {
                     // if no lady is present to do intrigue, then the
@@ -431,19 +439,19 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
         
         if (!doneLadies) {
             // do an intrigue check with the highest lady in attendance
-            family.populate({path: 'ladies', model: 'Lady'}, function (err, f) {
+            Lady.find({family: family.id}, function (err, ladies) {
                 var best,
-                    counter = f.ladies.length,
+                    counter = ladies.length + 1,
                     ladyComplete = function () {
                         counter -= 1;
                         if (0 === counter) {
-                            doneLadies = best;
+                            doneLadies = best || true;
                             complete();
                         }
                     };
                 if (err) {return err; }
                 
-                f.ladies.forEach(function (lady) {
+                ladies.forEach(function (lady) {
                     // determine the best for intrigue
                     if (!best || best.getStat('Mind').level < lady.getStat('Mind').level) {
                         best = lady;
@@ -451,18 +459,18 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
                     
                     // determine dalliance for any not already married/pregnant
                     if (lady.marriagable() && 0 === Math.floor(Math.random() * 10)) {
-                        lady.temptation('Lust', f, game, null, ladyComplete);
+                        lady.temptation('Lust', family, game, null, ladyComplete);
                     } else {
                         ladyComplete();
                     }
                 });
-                
+                ladyComplete();
             });
         }
         
         if (!doneExtended) {
-            family.populate({path: 'extended', model: 'Squire'}, function (err, f) {
-                var counter = f.extended.length,
+            Squire.find({family: family.id}, function (err, extended) {
+                var counter = extended.length,
                     extendedComplete = function () {
                         counter -= 1;
                         if (0 === counter) {
@@ -472,10 +480,10 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
                     };
                 if (err) {return err; }
                 
-                f.extended.forEach(function (member) {
+                extended.forEach(function (member) {
                     // determine dalliance for any not already married
                     if (member.marriagable() && 0 === Math.floor(Math.random() * 10)) {
-                        member.temptation('Lust', f, game, null, extendedComplete);
+                        member.temptation('Lust', family, game, null, extendedComplete);
                     } else {
                         extendedComplete();
                     }

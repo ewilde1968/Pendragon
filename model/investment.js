@@ -57,8 +57,8 @@ InvestmentSchema.methods.determineYearEvents = function (cb) {
         }
 
         if (eventList) {
-            Storyline.findOne({name: eventList[Math.floor(Math.random() * eventList.length)]},
-                              function (err, ev) {
+            Storyline.findByName(eventList[Math.floor(Math.random() * eventList.length)],
+                function (err, ev) {
                     if (err) {return err; }
                     if (cb) {cb(ev); }
                 });

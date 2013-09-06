@@ -60,12 +60,13 @@ GameSchema.statics.factory = function (settings, ownerId, cb) {
             
 
     Storyline.find({year: result.turn.year,
-                    quarter: result.turn.quarter
+                    quarter: result.turn.quarter,
+                    isTemplate: true
                    }, function (err, evs) {
         if (err) {return err; }
                        
         evs.forEach(function (e) {
-            e.parent = that.id;
+            e.isTemplate = false;
             result.queuedEvents.push(e);
         });
         
@@ -132,8 +133,8 @@ GameSchema.methods.getEvents = function (cb) {
     //    family events
     //    patriarch events
     //    holding events
-    //    ladies events
     //    lesser knight events
+    //    ladies events
     //    squire events
     this.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(that.turn, that.satisfies)) {
@@ -191,12 +192,13 @@ GameSchema.methods.nextTurn = function (options, cb) {
                 that.turn.year = nextYear;
 
                 Storyline.find({year: that.turn.year,
-                                quarter: that.turn.quarter
+                                quarter: that.turn.quarter,
+                                isTemplate: true
                     }, function (err, evs) {
                     if (err) {return err; }
                        
                     evs.forEach(function (e) {
-                        e.parent = that.id;
+                        e.isTemplate = false;
                         that.queuedEvents.push(e);
                     });
 
@@ -278,13 +280,13 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // At court, each unmarried character has a slim change of being
             // tempted into a dalliance.
             //
-        // TODO determine results from any daliances
+        // TOTEST determine results from any daliances
         nextSeason = 'Summer';
         break;
     case 'Summer':
         // TODO determine campaign season
         // determine training results
-        // TODO determine pregnancies
+        // determine pregnancies
         nextSeason = 'Fall';
         break;
     case 'Fall':

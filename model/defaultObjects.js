@@ -108,8 +108,7 @@ var defaultObjects = {
             locale: {name: 'Caercolun'},
             extended: [
                 {
-                    name: 'Elmig ap Lucius',
-                    family: 'Caercolun'
+                    name: 'Elmig ap Lucius'
                 }
             ]
         }
@@ -202,7 +201,7 @@ var defaultObjects = {
                     morning: [
                         {
                             name: 'Knighting Ceremony',
-                            check: 'honor',
+                            check: 'Honor',
                             difficulty: 5,
                             result: {
                                 Fumble: 'Knighting Family Patriarch',
@@ -215,7 +214,7 @@ var defaultObjects = {
                     evening: [
                         {
                             name: 'Feast',
-                            check: 'mind',
+                            check: 'Mind',
                             difficulty: 10,
                             result: {
                                 Fumble: 'Offend Berkhamstead',
@@ -305,7 +304,7 @@ var defaultObjects = {
                     label: 'Ignore',
                     title: 'Ignore Muster',
                     message: "The marshal leads your peers, the other young knights with whom you were trained, to flush out the bandits. They chase the fleeing bandits through your fields, capturing every last one of them. Your peers, the knights of Hertfordshire, view you as a coward for not daring to face the threat of bandits on your own holdings. Your peasants say nothing, looking sadly at their crops trampled by the knight's horses.",
-                    actions: {honor: -1, target: 'patriarch'},
+                    actions: {Honor: -1, target: 'patriarch'},
                     choices: [{label: 'Ignominy'}]
                 }
             ]
@@ -490,6 +489,20 @@ var defaultObjects = {
             message: 'Oh my!',
             actions: {log: true, bastard: true},
             choices: [{label: 'Done'}]
+        },
+        {
+            name: 'Offer Feunette',
+            title: 'Marriage Offer',
+            message: 'Do you?',
+            choices: [
+                {
+                    label: 'I do',
+                    actions: {log: true, marry: 'Feunette', target: 'patriarch'}
+                },
+                {
+                    label: "No, I'll stay a bachelor."
+                }
+            ]
         }
     ]
 };

@@ -442,7 +442,7 @@ block content
                                 cObj['experience'] = expObj;
                                 changesObj[target] = cObj;
                                 break;
-                            case 'honor':
+                            case 'Honor':
                                 changeStat(prop, action[prop], target);
                                 break;
                             case 'cash':
@@ -457,16 +457,12 @@ block content
                             case 'choice':
                                 changesObj[target] = action[prop];
                                 break;
+                            case 'marry':
                             case 'pregnancy':
-                                var cObj = changesObj[target] || {};
-                                
-                                cObj.pregnancy = action[prop];
-                                changesObj[target] = cObj;
-                                break;
                             case 'death':
                                 var cObj = changesObj[target] || {};
                                 
-                                cObj.death = action[prop];
+                                cObj[prop] = action[prop];
                                 changesObj[target] = cObj;
                                 break;
                             case 'log':

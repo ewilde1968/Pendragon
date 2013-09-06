@@ -95,6 +95,18 @@ StorylineSchema.methods.setFutureTime = function (thisTurn, years, seasons) {
     }
 };
 
+StorylineSchema.statics.findByName = function (name, cb) {
+    "use strict";
+    Storyline.findOne({name: name, isTemplate: true}, function (err, s) {
+        if (err) {return err; }
+        
+        if (s) {
+            s.isTemplate = false;
+        }
+        
+        if (cb) {cb(err, s); }
+    });
+};
 
 var Storyline = mongoose.model('Storyline', StorylineSchema);
 module.exports = Storyline;

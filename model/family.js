@@ -25,8 +25,6 @@ var FamilySchema = new Schema({
     liege:          ObjectId,   // Family
     king:           ObjectId,   // Family
     rank:           String,
-    ladies:         [{ type: ObjectId, ref: 'Lady' }],      // important women of all stations in the family
-    extended:       [{ type: ObjectId, ref: 'Squire' }],    // other family members, may be trained or knighted
     politics:       [Politics.schema],                      // references to other families
     cash:           Number,
     specialty:      String,
@@ -58,8 +56,9 @@ FamilySchema.statics.factory = function (template, settings, cb) {
         complete = function () {
             if (0 === countLadies && 0 === countExtended && donePatriarch && doneLiege && doneLocale) {
                 if (stewardLady && doneLocale.steward && !doneLocale.steward.familyRef) {
-                    doneLocale.addSteward(stewardLady);
-                    doneLocale.save();
+                    doneLocale.addSteward(stewardLady, function () {
+                        doneLocale.save();
+                    });
                 }
                 
                 result.save(function (err, doc) {
@@ -75,7 +74,7 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     if (template.patriarch !== false) {
         Knight.factory({name: template.patriarch || 'first knight',
                         profession: 'Knight'
-                    }, template.game,
+                    }, template.game, result,
                    function (err, firstKnight) {
                 if (err) {return err; }
 
@@ -86,8 +85,8 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     }
     
     if (template.locale) {
-        template.locale.landlord = result.id;
-        Locale.factory(template.locale, function (err, locale) {
+        template.locale.landlord = result;
+        Locale.factory(template.locale, template.game, function (err, locale) {
             doneLocale = locale;
             complete();
         });
@@ -108,10 +107,9 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     
     if (template.extended) {
         template.extended.forEach(function (ex) {
-            Squire.factory(ex, template.game, function (err, s) {
+            Squire.factory(ex, template.game, result, function (err, s) {
                 if (err) {return err; }
                 
-                result.extended.addToSet(s);
                 countExtended -= 1;
                 complete();
             });
@@ -120,7 +118,7 @@ FamilySchema.statics.factory = function (template, settings, cb) {
     
     if (template.ladies) {
         template.ladies.forEach(function (l) {
-            Lady.factory(l, template.game, function (err, lady) {
+            Lady.factory(l, template.game, result, function (err, lady) {
                 if (err) {return err; }
                 
                 // find the lady with the highest stewardry to take care of the holding
@@ -128,7 +126,6 @@ FamilySchema.statics.factory = function (template, settings, cb) {
                     stewardLady = lady;
                 }
                 
-                result.ladies.addToSet(lady);
                 countLadies -= 1;
                 complete();
             });
@@ -211,8 +208,10 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
     var that = this,
         donePatriarch,
         doneHoldings = false,
+        doneExtended = false,
+        doneLadies = false,
         complete = function () {
-            if (cb && doneHoldings && donePatriarch) {
+            if (doneExtended && doneLadies && cb && doneHoldings && donePatriarch) {
                 
                 cb({
                     family: that,
@@ -261,6 +260,46 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
             }
         });
     });
+    
+    Squire.find({family: that.id}, function (err, extended) {
+        var counter = 0,
+            limit = extended.length;
+
+        if (err) {return err; }
+        if (limit === 0) {
+            doneExtended = extended;
+            complete();
+        }
+
+        extended.forEach(function (e) {
+            counter += 1;
+            e.getEvents(game.turn, result);
+            if (counter === limit) {
+                doneExtended = extended;
+                complete();
+            }
+        });
+    });
+
+    Lady.find({family: that.id}, function (err, ladies) {
+        var counter = 0,
+            limit = ladies.length;
+
+        if (err) {return err; }
+        if (limit === 0) {
+            doneLadies = ladies;
+            complete();
+        }
+
+        ladies.forEach(function (l) {
+            counter += 1;
+            l.getEvents(game.turn, result);
+            if (counter === limit) {
+                doneLadies = ladies;
+                complete();
+            }
+        });
+    });
 
     return that;
 };
@@ -285,7 +324,6 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
     
     that.clearEvents(game.turn);
 
-    // TODO option = options || that.AIOptions(game, cb);
     if (options && options.changes) {
         that.generosity = options.changes.generosity || that.generosity;
         that.livingStandard = options.changes.livingStyle || that.livingStandard;
@@ -300,7 +338,7 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
             donePatriarch = true;
             complete(0);
         } else {
-            patriarch.nextTurn(!options || options.changes[patriarch.id], game, function (cost) {
+            patriarch.nextTurn(options && options.changes[patriarch.id], game, function (cost) {
                 donePatriarch = true;
                 complete(cost);
             });
@@ -319,7 +357,7 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
         }
 
         holdings.forEach(function (h) {
-            h.nextTurn(!options || options.changes[h.id], game, function (cost) {
+            h.nextTurn(options && options.changes[h.id], game, function (cost) {
                 groupCost += cost;
                 
                 counter += 1;

@@ -15,25 +15,26 @@ var KnightSchema = Character.schema.extend({
 });
 
 
-KnightSchema.statics.factory = function (template, game, cb, firstKnight) {
+KnightSchema.statics.factory = function (template, game, family, cb, firstKnight) {
     "use strict";
     var result = new Knight(template);
-    result.initialize(template, game);
+    result.initialize(template, game, family, function (k) {
+        k.profession = 'Knight';
 
-    result.profession = 'Knight';
+        if (!template.age) {k.age = 21; }
+        k.getStat("Body").increase(1);
+        k.getStat("Soul").increase(-1);
+        k.getStat("Health").increase(1);
+        k.statistics.push(Statistic.factory({name: 'Honor', level: 6}));
+        k.statistics.push(Statistic.factory({name: 'Swordsmanship', level: 5}));
+        k.statistics.push(Statistic.factory({name: 'Horsemanship', level: 5}));
+        k.statistics.push(Statistic.factory({name: 'Spear', level: 5}));
+        k.armor = 'Chain Hauberk';
+        k.shield = true;
 
-    if (!template.age) {result.age = 21; }
-    result.getStat("Body").increase(1);
-    result.getStat("Soul").increase(-1);
-    result.getStat("Health").increase(1);
-    result.statistics.push(Statistic.factory({name: 'Honor', level: 6}));
-    result.statistics.push(Statistic.factory({name: 'Swordsmanship', level: 5}));
-    result.statistics.push(Statistic.factory({name: 'Horsemanship', level: 5}));
-    result.statistics.push(Statistic.factory({name: 'Spear', level: 5}));
-    result.armor = 'Chain Hauberk';
-    result.shield = true;
+        k.save(cb);
+    });
 
-    result.save(cb);
     
     return result;
 };

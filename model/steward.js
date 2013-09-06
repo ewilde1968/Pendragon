@@ -19,19 +19,21 @@ var StewardSchema = Character.schema.extend({
 });
 
 
-StewardSchema.statics.factory = function (template, game) {
+StewardSchema.statics.factory = function (template, game, family, cb) {
     "use strict";
     var result = new Steward(template);
-    result.initialize(template, game);
+    result.initialize(template, game, family, function (s) {
+        s.profession = 'Steward';
 
-    result.profession = 'Steward';
-
-    if (!template.age) {result.age = 21; }
-    result.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
-    result.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
-    result.statistics.push(Statistic.factory({name: 'Swordsmanship', level: 1}));
-    result.statistics.push(Statistic.factory({name: 'Horsemanship', level: 1}));
-    result.statistics.push(Statistic.factory({name: 'Spear', level: 1}));
+        if (!template.age) {s.age = 21; }
+        s.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
+        s.statistics.push(Statistic.factory({name: 'Stewardry', level: 5}));
+        s.statistics.push(Statistic.factory({name: 'Swordsmanship', level: 1}));
+        s.statistics.push(Statistic.factory({name: 'Horsemanship', level: 1}));
+        s.statistics.push(Statistic.factory({name: 'Spear', level: 1}));
+        
+        if (cb) {cb(s); }
+    });
 
     return result;
 };

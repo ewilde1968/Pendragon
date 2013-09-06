@@ -17,6 +17,7 @@ var mongoose = require('mongoose'),
 
 var LocaleSchema = new Schema({
     name:           { type: String, required: true },
+    game:           ObjectId,
     landlord:       [{ type: ObjectId, ref: 'Family' }],
     projIncome:     Number,
     harvest:       {result: String, income: Number},
@@ -34,10 +35,11 @@ var LocaleSchema = new Schema({
 });
 
 
-LocaleSchema.statics.factory = function (template, cb) {
+LocaleSchema.statics.factory = function (template, game, cb) {
     "use strict";
     var result = new Locale({name: template.name,
-                             landlord: template.landlord ? [template.landlord] : null,
+                             game: game,
+                             landlord: (template.landlord && template.landlord.id) ? [template.landlord.id] : null,
                              projIncome: template.projIncome || 6,
                              cost: 1,
                              taxes: template.taxes || 6,
@@ -60,9 +62,11 @@ LocaleSchema.statics.factory = function (template, cb) {
         result.allowedFeasts.push(Feast.factory(i));
     });
 
-    result.addSteward(Steward.factory({name: 'first steward'}));
-    
-    result.save(cb);
+    Steward.factory({name: 'first steward'}, game, template.landlord, function (s) {
+        result.addSteward(s, function () {
+            result.save(cb);
+        });
+    });
 
     return result;
 };
@@ -128,8 +132,10 @@ LocaleSchema.methods.addInvestment = function (invest, prebuilt) {
     return cost;
 };
 
-LocaleSchema.methods.addSteward = function (s) {
+LocaleSchema.methods.addSteward = function (s, cb) {
     "use strict";
+    var that = this;
+    
     if (this.steward.stats.length > 0 && !this.steward.familyRef) {
         // if familyRef is not valid then this is a commoner steward and was paid
         this.cost -= 1;
@@ -139,12 +145,19 @@ LocaleSchema.methods.addSteward = function (s) {
     if (s instanceof Steward) {
         // commoner steward
         this.steward.stats.push(s);
-        this.steward.family = null;
+        this.steward.familyRef = null;
         this.cost += 1;
+        
+        if (cb) {cb(that); }
     } else if (s && s.id) {
         // family member, which doesn't need to be paid
-        this.steward.stats.push(Steward.factory(s));   // make a Steward copy of the family member
-        this.steward.family = s.id;
+
+        Steward.factory(s, null, {id: that.landlord}, function (st) {
+            that.steward.stats.push(st);   // make a Steward copy of the family member
+            that.steward.familyRef = s.id;
+            
+            if (cb) {cb(that); }
+        });
     }
     
     return this;
@@ -159,7 +172,7 @@ LocaleSchema.methods.addFeast = function (f, cb) {
     this.allowedFeasts.forEach(function (feast) {
         if (feast.name === f.name) {
             useCB = false;
-            Storyline.findOne({name: feast.name}, function (err, ev) {
+            Storyline.findByName(feast.name, function (err, ev) {
                 if (err) {return err; }
 
                 if (ev) {
@@ -185,7 +198,7 @@ LocaleSchema.methods.changeHate = function (hate, cb) {
     // check for hate-filled peasant 'quest' against the landlord
     // only check when hate changes
     if (!this.quest && 'Critical Success' === this.hate[0].difficultyCheck(3)) {
-        Storyline.find({name: 'revolt'}, function (err, qA) {
+        Storyline.findByName('revolt', function (err, qA) {
             if (err) {return err; }
 
             qA.forEach(function (q) {
@@ -211,7 +224,7 @@ LocaleSchema.methods.growPopulations = function (amount, cb) {
     this.population.noncombatants += Math.floor(amount);
     
     if (!this.quest && (Math.floor(Math.random() * 200) + this.population.noncombatants) >= 1000) {
-        Storyline.find({name: 'population'}, function (err, qA) {
+        Storyline.findByName('population', function (err, qA) {
             if (err) {return err; }
 
             qA.forEach(function (q) {
