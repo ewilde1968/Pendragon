@@ -8,9 +8,9 @@ var Character; // forward to clear out JSLint errors
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     ObjectId = Schema.ObjectId,
+    Family = require('./family'),
     Statistic = require('./statistic'),
-    Storyline = require('./storyline'),
-    Family = require('./family');
+    Storyline = require('./storyline');
 
 
 var decreptitudeYear = [];
@@ -336,17 +336,15 @@ CharacterSchema.methods.marry = function (spouse, game, cb) {
         complete = function (partner) {
             that.spouse = partner.id;
             partner.family = that.family;
-            Family.findById(that.family, function (err, f) {
+            that.populate({path: 'family', model: 'Family'}, function (err, cDoc) {
                 if (err) {return err; }
-                partner.dalliance(f, game, that.id, cb);
+                partner.dalliance(cDoc.family, game, that.id, cb);
             });
         };
     
     Character.findById(spouse, function (err, s) {
-        if (err) {return err; }
-        if (s) {
-            complete(s);
-        } else {
+        if (err || !s) {
+            // an err could be the result of spouse being a name instead of an Id
             Character.findOne({name: spouse, game: game.id}, function (err, sp) {
                 if (err) {return err; }
                 if (sp) {
@@ -358,6 +356,8 @@ CharacterSchema.methods.marry = function (spouse, game, cb) {
                     };
                 }
             });
+        } else {
+            complete(s);
         }
     });
 };
@@ -390,29 +390,31 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
     
     switch (game.turn.quarter) {
     case "Winter":
+        doneSpouse = true;
         break;
     case "Spring":
+        doneSpouse = true;
         break;
     case "Summer":
         if (that.spouse) {
-            Family.findById(that.family, function (err, f) {
+            that.populate({path: 'family', model: 'Family'}, function (err, cDoc) {
                 if (err) {return err; }
-                Character.findById(that.spouse, function (err, s) {
+                cDoc.populate({path: 'spouse', model: 'Lady'}, function (err, c) {
                     if (err) {return err; }
 
-                    if (s) {
-                        s.dalliance(f, game, that.id, function () {
+                    if (c.spouse) {
+                        c.spouse.dalliance(c.family, game, that.id, function () {
                             doneSpouse = true;
                             complete();
                         });
                     } else {
-                        that.spouse = null;
+                        c.spouse = null;
                         doneSpouse = true;
                         complete();
                     }
                 });
             });
-        }
+        } else {doneSpouse = true; }
         break;
     case "Fall":
         // age each character a year
@@ -422,6 +424,8 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
         that.statistics.forEach(function (s) {s.experienceCheck(); });
         
         cost = that.cost();
+            
+        doneSpouse = true;
         break;
     default:
         break;

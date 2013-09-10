@@ -179,7 +179,7 @@ var defaultObjects = {
                             name: 'Feast at Great Hall',
                             check: 'Leadership',
                             difficulty: 1,
-                            result: {
+                            results: {
                                 Fumble: 'Offend Gwenhwyfer',
                                 Success: 'Flirt with Wench',
                                 'Critical Success': 'Befriend Caercolun'
@@ -189,7 +189,7 @@ var defaultObjects = {
                             name: 'Vigil',
                             check: 'Soul',
                             difficulty: 3,
-                            result: {
+                            results: {
                                 Fumble: 'Shaken Faith',
                                 Success: 'Befriend Chaplain',
                                 'Critical Success': 'Befriend Countess'
@@ -203,7 +203,7 @@ var defaultObjects = {
                             name: 'Knighting Ceremony',
                             check: 'Honor',
                             difficulty: 5,
-                            result: {
+                            results: {
                                 Fumble: 'Knighting Family Patriarch',
                                 Failure: 'Knighting Family Patriarch',
                                 Success: 'Knighting Family Patriarch',
@@ -216,7 +216,7 @@ var defaultObjects = {
                             name: 'Feast',
                             check: 'Mind',
                             difficulty: 10,
-                            result: {
+                            results: {
                                 Fumble: 'Offend Berkhamstead',
                                 Success: 'Offer Feunette',
                                 'Critical Success': 'Riding Under the Marshal'

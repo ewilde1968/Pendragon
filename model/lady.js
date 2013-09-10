@@ -21,14 +21,13 @@ var LadySchema = Character.schema.extend({
 
 LadySchema.statics.factory = function (template, game, family, cb) {
     "use strict";
-    var result = new Lady(template),
-        that = this;
+    var result = new Lady(template);
     
     result.initialize(template, game, family, function (l) {
         l.profession = 'Lady';
 
         l.age = template.age || 16;
-        l.fertility = template.fertility || (that.age > 14 && that.age < 38);
+        l.fertility = template.fertility || (result.age > 14 && result.age < 38);
         l.getStat("Body").increase(-1);
         l.getStat("Soul").increase(1);
         l.statistics.push(Statistic.factory({name: 'Honor', level: 4}));
@@ -64,15 +63,25 @@ LadySchema.methods.dalliance = function (family, game, partnerId, cb) {
         chance = Statistic.factory({level: 6}),
         complete = function (eventName, seasons) {
             Storyline.findByName(eventName, function (err, ev) {
+                var act;
+                
                 if (err) {return err; }
                 
-                if (!ev.actions) {ev.actions = {}; }
-                ev.actions.target = that.id;
-                ev.actions.partner = partnerId;
+                if (!ev.actions) {
+                    act = {};
+                } else if ('string' === typeof ev.actions) {
+                    act = JSON.parse(ev.actions);
+                } else {
+                    act = ev.actions;
+                }
+                
+                act.target = that.id;
+                act.partner = partnerId;
                 ev.setFutureTime(game.turn, 0, 3);
-                
+
+                ev.actions = JSON.stringify(act);
                 if (ev) {that.queuedEvents.push(ev); }
-                
+
                 that.save(cb);
             });
         };

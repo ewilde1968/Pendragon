@@ -177,7 +177,6 @@ GameSchema.methods.getEvents = function (cb) {
 GameSchema.methods.nextTurn = function (options, cb) {
     "use strict";
     // Every Year
-    // TODO determine quests
     // TODO map
     
     var that = this,
@@ -280,7 +279,6 @@ GameSchema.methods.nextTurn = function (options, cb) {
             // At court, each unmarried character has a slim change of being
             // tempted into a dalliance.
             //
-        // TOTEST determine results from any daliances
         nextSeason = 'Summer';
         break;
     case 'Summer':
