@@ -1,7 +1,7 @@
 /*
  * Statistic model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 var Statistic; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
@@ -69,13 +69,27 @@ StatisticSchema.methods.difficultyCheck = function (difficulty, bonus) {
     // number of successes is >= difficulty + 3 then the check crits. If the
     // number of success is <= diffuclty - 3 then the check fumbles. Otherwise
     // the check fails.
-    var roll = this.roll(bonus);
+    var roll = this.roll(bonus),
+        result;
     
-    if (roll < difficulty - 3) {return 'Fumble'; }
-    if (roll < difficulty) {return 'Failure'; }
-    if (roll < difficulty + 3) {return 'Success'; }
+    console.log("difficulty check for %s", this.name);
+    console.log("difficulty: %d", difficulty);
+    console.log("bonus: %d", bonus);
+    console.log("roll: %d", roll);
     
-    return 'Critical Success';
+    if (roll < difficulty - 3) {
+        result = 'Fumble';
+    } else if (roll < difficulty) {
+        result = 'Failure';
+    } else if (roll < difficulty + 3) {
+        result = 'Success';
+    } else {
+        result = 'Critical Success';
+    }
+    
+    console.log("result: %s", result);
+    
+    return result;
 };
 
 StatisticSchema.methods.experienceCheck = function () {
@@ -114,14 +128,29 @@ StatisticSchema.methods.opposedCheck = function (enemyStatistic, bonus, enemyBon
     "use strict";
     var enemyRoll = typeof enemyStatistic === 'Statistic' ? enemyStatistic.roll(enemyBonus || 0) :
                 Statistic.factory({level: enemyStatistic}).roll(enemyBonus || 0),
-        myRoll = this.roll(bonus || 0);
+        myRoll = this.roll(bonus || 0),
+        result;
     
-    if (myRoll < enemyRoll - 3) {return 'Fumble'; }
-    if (myRoll < enemyRoll) {return 'Failure'; }
-    if (myRoll === enemyRoll) {return 'Tie'; }
-    if (myRoll > enemyRoll + 3) {return 'Critical Success'; }
+    console.log("opposed check for %s", this.name);
+    console.log("levels: %d vs. %d", this.level, enemyStatistic.level);
+    console.log("bonuses: %d vs. %d", bonus, enemyBonus);
+    console.log("rolls: %d vs. %d", myRoll, enemyRoll);
     
-    return 'Success';
+    if (myRoll < enemyRoll - 3) {
+        result = 'Fumble';
+    } else if (myRoll < enemyRoll) {
+        result = 'Failure';
+    } else if (myRoll === enemyRoll) {
+        result = 'Tie';
+    } else if (myRoll > enemyRoll + 3) {
+        result = 'Critical Success';
+    } else {
+        result = 'Success';
+    }
+    
+    console.log("result: %s", result);
+    
+    return result;
 };
 
 

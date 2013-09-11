@@ -1,7 +1,7 @@
 /*
  * Family model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 
 var Family; // forward to clear out JSLint errors
 
@@ -212,7 +212,6 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
         doneLadies = false,
         complete = function () {
             if (doneExtended && doneLadies && cb && doneHoldings && donePatriarch) {
-                
                 cb({
                     family: that,
                     patriarch: donePatriarch,
@@ -226,13 +225,17 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
         result = [];
     }
     
+    console.log("Family events for %s:", that.name);
+    
+    // populate in priority of events being shown to user
+
     that.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(game.turn, that.satisfies)) {
+            console.log(e);
             result.push(e);
         }
     });
-    
-    // populate in priority of events being shown to user
+
     Knight.findById(that.patriarch, function (err, patriarch) {
         if (err) {return err; }
 
@@ -263,7 +266,8 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
     
     Squire.find({family: that.id}, function (err, extended) {
         var counter = 0,
-            limit = extended.length;
+            limit = extended.length,
+            endList = [];
 
         if (err) {return err; }
         if (limit === 0) {
@@ -273,9 +277,14 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
 
         extended.forEach(function (e) {
             counter += 1;
-            e.getEvents(game.turn, result);
+            
+            if ('Squire' === e.profession) {
+                endList.push(e);
+                e.getEvents(game.turn, result);
+            }
+            
             if (counter === limit) {
-                doneExtended = extended;
+                doneExtended = endList;
                 complete();
             }
         });
@@ -283,7 +292,8 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
 
     Lady.find({family: that.id}, function (err, ladies) {
         var counter = 0,
-            limit = ladies.length;
+            limit = ladies.length,
+            endList = [];
 
         if (err) {return err; }
         if (limit === 0) {
@@ -293,9 +303,14 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
 
         ladies.forEach(function (l) {
             counter += 1;
-            l.getEvents(game.turn, result);
+            
+            if ('Lady' === l.profession) {
+                endList.push(l);
+                l.getEvents(game.turn, result);
+            }
+            
             if (counter === limit) {
-                doneLadies = ladies;
+                doneLadies = endList;
                 complete();
             }
         });

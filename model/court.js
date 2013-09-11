@@ -1,7 +1,7 @@
 /*
  * Court model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 
 var Court; // forward to clear out JSLint errors
 
@@ -294,6 +294,10 @@ CourtSchema.methods.getEvents = function (game, result, cb) {
         };
     
     storyline = Storyline.factory(ev);
+    
+    console.log("Court Event");
+    console.log(ev);
+    
     complete();
 };
 

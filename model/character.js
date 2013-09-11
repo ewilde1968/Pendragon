@@ -1,7 +1,7 @@
 /*
  * Character model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 
 var Character; // forward to clear out JSLint errors
 
@@ -160,6 +160,8 @@ CharacterSchema.methods.getEvents = function (turn, result) {
         result = [];
     }
     
+    console.log("Character events for %s:", that.name);
+    
     this.queuedEvents.forEach(function (e) {
         var actions;
         
@@ -172,6 +174,7 @@ CharacterSchema.methods.getEvents = function (turn, result) {
                 e.actions = JSON.stringify(actions);
             }
 
+            console.log(e);
             result.push(e);
         }
     });

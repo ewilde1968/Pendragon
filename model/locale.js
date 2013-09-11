@@ -1,7 +1,7 @@
 /*
  * Locale model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 var Locale; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
@@ -96,6 +96,8 @@ LocaleSchema.methods.getEvents = function (turn, evs) {
         evs = [];
     }
     
+    console.log("Locale events for %s:", that.name);
+    
     this.queuedEvents.forEach(function (e) {
         var actions;
         
@@ -108,6 +110,7 @@ LocaleSchema.methods.getEvents = function (turn, evs) {
                 e.actions = JSON.stringify(actions);
             }
 
+            console.log(e);
             evs.push(e);
         }
     });

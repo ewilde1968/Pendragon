@@ -1,7 +1,7 @@
 /*
  * Game model
 */
-/*global export, require, module */
+/*global export, require, module, console */
 
 var Game; // forward to clear out JSLint errors
 
@@ -124,9 +124,13 @@ GameSchema.methods.getEvents = function (cb) {
             if (doneF && doneC) {
                 doneF.game = that;  // doneF contains data object with results array embedded within it
                 doneF.court = doneC instanceof Court ? doneC : null;
+
                 if (cb) {cb(doneF); }
             }
         };
+    
+    console.log("%s %s", that.turn.year, that.turn.quarter);
+    console.log("Game events");
 
     // TODO: order of events is:
     //    game events (year or season events for the whole of the game)
@@ -138,6 +142,7 @@ GameSchema.methods.getEvents = function (cb) {
     //    squire events
     this.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(that.turn, that.satisfies)) {
+            console.log(e);
             result.push(e);
         }
     });
