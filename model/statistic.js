@@ -6,7 +6,8 @@ var Statistic; // forward to clear out JSLint errors
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    ObjectId = Schema.ObjectId;
+    ObjectId = Schema.ObjectId,
+    util = require('util');
 
 
 var levelSetter = function (val) {
@@ -52,10 +53,17 @@ StatisticSchema.methods.increase = function (value) {
 StatisticSchema.methods.roll = function (bonus) {
     "use strict";
     var result = 0,
-        counter = Math.floor(this.level + (bonus || 0));
+        counter = Math.floor(this.level + (bonus || 0)),
+        successLimit = 3;
+    
+    if (0 === counter) {
+        // unskilled action, handicap the possibly one success
+        counter = 1;
+        successLimit = 4;
+    }
     
     while (counter > 0) {
-        if (Math.floor(Math.random() * 6) >= 3) {result += 1; }
+        if (Math.floor(Math.random() * 6) >= successLimit) {result += 1; }
         counter -= 1;
     }
     
@@ -72,7 +80,8 @@ StatisticSchema.methods.difficultyCheck = function (difficulty, bonus) {
     var roll = this.roll(bonus),
         result;
     
-    console.log("difficulty check for %s", this.name);
+    console.log("difficulty check");
+    console.log(util.inspect(this, {colors: true}));
     console.log("difficulty: %d", difficulty);
     console.log("bonus: %d", bonus);
     console.log("roll: %d", roll);
@@ -95,9 +104,11 @@ StatisticSchema.methods.difficultyCheck = function (difficulty, bonus) {
 StatisticSchema.methods.experienceCheck = function () {
     "use strict";
     // to increase a Statistic or stat, every die rolled must be a success
-    var result = this.difficultyCheck(this.level, 0);
+    var result;
     
     if (this.experience) {
+        result = this.difficultyCheck(this.level, 1);   // get level + 1 dice and must make level to increase skill
+
         switch (result) {
         case 'Critical Success':
             this.increase();
@@ -131,8 +142,9 @@ StatisticSchema.methods.opposedCheck = function (enemyStatistic, bonus, enemyBon
         myRoll = this.roll(bonus || 0),
         result;
     
-    console.log("opposed check for %s", this.name);
-    console.log("levels: %d vs. %d", this.level, enemyStatistic.level);
+    console.log("opposed check");
+    console.log('This: ', util.inspect(this, {colors: true}));
+    console.log('Enemy: ', util.inspect(enemyStatistic, {colors: true}));
     console.log("bonuses: %d vs. %d", bonus, enemyBonus);
     console.log("rolls: %d vs. %d", myRoll, enemyRoll);
     

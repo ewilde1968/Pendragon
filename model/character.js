@@ -174,7 +174,7 @@ CharacterSchema.methods.getEvents = function (turn, result) {
                 e.actions = JSON.stringify(actions);
             }
 
-            console.log(e);
+            console.log('Event: %s', e.name);
             result.push(e);
         }
     });
@@ -276,6 +276,8 @@ CharacterSchema.methods.temptation = function (sin, family, game, data, cb) {
     var check = this.getStat('Soul').difficultyCheck(5),
         doCB = true;
 
+    console.log('%s Temptation for %s', sin, this.name);
+    
     switch (sin) {
     case 'Lust':
         if (this.fertility && (check === 'Failure' || check === 'Fumble')) {
@@ -380,6 +382,8 @@ CharacterSchema.methods.nextTurn = function (options, game, cb) {
                 });
             }
         };
+    
+    console.log('Next turn for character %s', that.name);
     
     that.mergeOptions(options);
     that.clearEvents(game.turn);

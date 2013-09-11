@@ -14,7 +14,8 @@ var mongoose = require('mongoose'),
     Knight = require('./knight'),
     Lady = require('./lady'),
     Squire = require('./squire'),
-    Storyline = require('./storyline');
+    Storyline = require('./storyline'),
+    Statistic = require('./statistic');
 
 var CourtSchema = new Schema({
     year:           Number,
@@ -296,7 +297,7 @@ CourtSchema.methods.getEvents = function (game, result, cb) {
     storyline = Storyline.factory(ev);
     
     console.log("Court Event");
-    console.log(ev);
+    console.log(ev.title);
     
     complete();
 };
@@ -320,7 +321,12 @@ CourtSchema.methods.doScheduledActivity = function (choice, activities, activist
         doneActivities = 0 === activities.length,
         actEv = null,
         complete = function (ev) {
-            if (ev) {game.queuedEvents.push(ev); }
+            if (ev) {
+                game.queuedEvents.push(ev);
+                
+                console.log('Event pushed to queue: %s', ev.name);
+            }
+            
             if (doneActivities && cb) {cb(); }
         };
     
@@ -331,27 +337,29 @@ CourtSchema.methods.doScheduledActivity = function (choice, activities, activist
         if (choice === activity.name) {
             doneActivities = true;
             
-            stat = activist.getStat(activity.check);
-            if (stat) {
-                roll = stat.difficultyCheck(activity.difficulty);
-                if (activity.results) {
-                    if (activity.results[roll]) {
-                        doneActivities = false;
-                        Storyline.findByName(activity.results[roll], function (err, ev) {
-                            if (err) {return err; }
-                            
-                            doneActivities = true;
-                            complete(ev);
-                        });
-                    }
-                } else {
-                    if (that.intrigue[roll]) {
-                        actEv = Storyline.factory({
-                            title: 'Intrigue',
-                            message: that.intrigue[roll],
-                            choices: [{label: 'Done'}]
-                        });
-                    }
+            stat = activist.getStat(activity.check) || Statistic.factory({
+                name: activity.check,
+                level: 0
+            });
+            roll = stat.difficultyCheck(activity.difficulty);
+
+            if (activity.results) {
+                if (activity.results[roll]) {
+                    doneActivities = false;
+                    Storyline.findByName(activity.results[roll], function (err, ev) {
+                        if (err) {return err; }
+
+                        doneActivities = true;
+                        complete(ev);
+                    });
+                }
+            } else {
+                if (that.intrigue[roll]) {
+                    actEv = Storyline.factory({
+                        title: 'Intrigue',
+                        message: that.intrigue[roll],
+                        choices: [{label: 'Done'}]
+                    });
                 }
             }
         }
@@ -371,6 +379,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     
     if (options['Friday Morning']) {
         counter += 1;
+        
+        console.log('Friday Morning: %s', options['Friday Morning']);
+        
         that.doScheduledActivity(options['Friday Morning'],
                                  that.schedule.friday.morning,
                                  that.schedule.friday.morning.results ? patriarch : matriarch,
@@ -378,6 +389,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     }
     if (options['Friday Evening']) {
         counter += 1;
+        
+        console.log('Friday Evening: %s', options['Friday Evening']);
+        
         that.doScheduledActivity(options['Friday Evening'],
                                  that.schedule.friday.evening,
                                  that.schedule.friday.evening.results ? patriarch : matriarch,
@@ -385,6 +399,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     }
     if (options['Saturday Morning']) {
         counter += 1;
+        
+        console.log('Saturday Morning: %s', options['Saturday Morning']);
+        
         that.doScheduledActivity(options['Saturday Morning'],
                                  that.schedule.saturday.morning,
                                  that.schedule.saturday.morning.results ? patriarch : matriarch,
@@ -392,6 +409,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     }
     if (options['Saturday Evening']) {
         counter += 1;
+        
+        console.log('Saturday Evening: %s', options['Saturday Evening']);
+        
         that.doScheduledActivity(options['Saturday Evening'],
                                  that.schedule.saturday.evening,
                                  that.schedule.saturday.evening.results ? patriarch : matriarch,
@@ -399,6 +419,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     }
     if (options['Sunday Morning']) {
         counter += 1;
+        
+        console.log('Sunday Morning: %s', options['Sunday Morning']);
+        
         that.doScheduledActivity(options['Sunday Morning'],
                                  that.schedule.sunday.morning,
                                  that.schedule.sunday.morning.results ? patriarch : matriarch,
@@ -406,6 +429,9 @@ CourtSchema.methods.walkSchedule = function (options, game, patriarch, matriarch
     }
     if (options['Sunday Evening']) {
         counter += 1;
+        
+        console.log('Sunday Evening: %s', options['Sunday Evening']);
+        
         that.doScheduledActivity(options['Sunday Evening'],
                                  that.schedule.sunday.evening,
                                  that.schedule.sunday.evening.results ? patriarch : matriarch,
@@ -424,6 +450,8 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
     // Also do an intrigue check.
     var that = this;
 
+    console.log("Court Turn: %s", that.name);
+    
     Family.findById(game.playerFamily, function (err, family) {
         // get attendance first as for loop can be in arbitrary order
         var prop,
@@ -450,20 +478,27 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
                         counter -= 1;
                         if (0 === counter) {
                             doneLadies = best || true;
+                            
+                            if (true !== doneLadies) {
+                                console.log("Best lady in attendance for family is %s", best.name);
+                            }
+                            
                             complete();
                         }
                     };
                 if (err) {return err; }
                 
                 ladies.forEach(function (lady) {
-                    // determine the best for intrigue
-                    if (!best || best.getStat('Mind').level < lady.getStat('Mind').level) {
-                        best = lady;
-                    }
+                    if ('Lady' === lady.profession) {
+                        // determine the best for intrigue
+                        if (!best || best.getStat('Mind').level < lady.getStat('Mind').level) {best = lady; }
                     
-                    // determine dalliance for any not already married/pregnant
-                    if (lady.marriagable() && 0 === Math.floor(Math.random() * 10)) {
-                        lady.temptation('Lust', family, game, null, ladyComplete);
+                        // determine dalliance for any not already married/pregnant
+                        if (lady.marriagable() && 0 === Math.floor(Math.random() * 10)) {
+                            lady.temptation('Lust', family, game, null, ladyComplete);
+                        } else {
+                            ladyComplete();
+                        }
                     } else {
                         ladyComplete();
                     }
@@ -485,9 +520,13 @@ CourtSchema.methods.nextTurn = function (options, game, cb) {
                 if (err) {return err; }
                 
                 extended.forEach(function (member) {
-                    // determine dalliance for any not already married
-                    if (member.marriagable() && 0 === Math.floor(Math.random() * 10)) {
-                        member.temptation('Lust', family, game, null, extendedComplete);
+                    if ('Squire' === member.profession) {
+                        // determine dalliance for any not already married
+                        if (member.marriagable() && 0 === Math.floor(Math.random() * 10)) {
+                            member.temptation('Lust', family, game, null, extendedComplete);
+                        } else {
+                            extendedComplete();
+                        }
                     } else {
                         extendedComplete();
                     }

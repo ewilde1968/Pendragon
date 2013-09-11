@@ -60,7 +60,7 @@ LadySchema.methods.dalliance = function (family, game, partnerId, cb) {
     "use strict";
     var that = this,
         bonus = 0,
-        chance = Statistic.factory({level: 6}),
+        chance = Statistic.factory({name: 'Pregnancy check for ' + that.name, level: 6}),
         complete = function (eventName, seasons) {
             Storyline.findByName(eventName, function (err, ev) {
                 var act;

@@ -19,7 +19,7 @@ var express = require('express'),
         "use strict";
         if (req && 'POST' === req.method) {
             if (req.params) {console.log("Request Params: ", util.inspect(req.params, {depth: 4, colors: true})); }
-            if (req.body) {console.log("Request Body: ", req.body); }
+            if (req.body) {console.log("Request Body: ", util.inspect(req.body, {depth: 4, colors: true})); }
         }
 
         next();

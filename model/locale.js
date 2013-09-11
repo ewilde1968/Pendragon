@@ -110,7 +110,7 @@ LocaleSchema.methods.getEvents = function (turn, evs) {
                 e.actions = JSON.stringify(actions);
             }
 
-            console.log(e);
+            console.log('Event: %s', e.name);
             evs.push(e);
         }
     });
@@ -327,6 +327,7 @@ LocaleSchema.methods.determineYearEvents = function (cb) {
     this.investments.forEach(function (i) {
         i.determineYearEvents(function (ev) {
             if (ev) {
+                console.log('Pushing event for locale %s: ', that.name, ev.name);
                 queue.push(ev);
             }
             
@@ -469,6 +470,8 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
             });
         };
 
+    console.log('Next Turn for locale %s', that.name);
+    
     that.clearEvents(game.turn);
     that.mergeOptions(options, function (cost) {
         totalCost += cost;
@@ -478,9 +481,11 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
             // TODO determine peasant population growth
             // TODO determine hatred fallout
             // determine holding events
-            that.determineYearEvents(function () {
-                complete();
-            });
+            if (that.landlord === game.playerFamily) {
+                that.determineYearEvents(function () {
+                    complete();
+                });
+            } else {complete(); }
             break;
         case "Spring":
             complete();
@@ -506,6 +511,8 @@ LocaleSchema.methods.nextTurn = function (options, game, cb) {
                         that.cost += i.maintenance;
                     }
                 });
+
+                console.log("Harvest for %s: %d", that.name, that.harvest.income);
 
                 totalCost -= that.harvest.income;
                 complete();

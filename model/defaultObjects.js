@@ -202,7 +202,7 @@ var defaultObjects = {
                         {
                             name: 'Knighting Ceremony',
                             check: 'Honor',
-                            difficulty: 5,
+                            difficulty: 3,
                             results: {
                                 Fumble: 'Knighting Family Patriarch',
                                 Failure: 'Knighting Family Patriarch',
@@ -215,7 +215,7 @@ var defaultObjects = {
                         {
                             name: 'Feast',
                             check: 'Mind',
-                            difficulty: 10,
+                            difficulty: 4,
                             results: {
                                 Fumble: 'Offend Berkhamstead',
                                 Success: 'Offer Feunette',

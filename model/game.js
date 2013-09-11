@@ -142,7 +142,7 @@ GameSchema.methods.getEvents = function (cb) {
     //    squire events
     this.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(that.turn, that.satisfies)) {
-            console.log(e);
+            console.log('Event: %s', e.name);
             result.push(e);
         }
     });
@@ -213,6 +213,8 @@ GameSchema.methods.nextTurn = function (options, cb) {
             }
         };
 
+    console.log('Next turn for game %s', that.id);
+    
     this.clearEvents();
 
     if (that.court && options) {

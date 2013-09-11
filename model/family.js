@@ -231,7 +231,7 @@ FamilySchema.methods.getEvents = function (game, result, cb) {
 
     that.queuedEvents.forEach(function (e) {
         if (e.filterByTurn(game.turn, that.satisfies)) {
-            console.log(e);
+            console.log('Event: %s', e.name);
             result.push(e);
         }
     });
@@ -336,6 +336,8 @@ FamilySchema.methods.nextTurn = function (options, game, cb) {
                 });
             }
         };
+    
+    console.log('Next Turn for family %s', that.name);
     
     that.clearEvents(game.turn);
 
